@@ -1,0 +1,25 @@
+#!/bin/bash
+
+unset missing
+
+#==============================================================================
+function ensure_package
+{
+    for package in $@; do
+        dpkg -s $package >/dev/null 2>&1
+        if [ $? -eq 1 ]; then
+            missing="$missing $package"
+        fi
+    done
+}
+#==============================================================================
+
+ensure_package python3-tk ffmpeg lame x264 libxvidcore4
+
+if [[ -n "$missing" ]]; then
+    echo "A program használatához először a következő csomagok telepítésére van szükség:$missing!"
+    sudo apt-get install $missing -y
+fi
+
+python3 -u conv2xvid.py
+
