@@ -6,17 +6,16 @@ import threading as th
 import time
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
-
+from PIL import Image, ImageTk
 
 class ReadOnlyEntry(tk.Entry):
     def __init__(self, master, name=None, set_cb=None
-            , text=None, width=150, **kw):
+            , text=None, **kw):
         super().__init__(master, **kw)
         self.__name = name
         self.__set_cb = set_cb
         self["state"] = "readonly"
         self["relief"] = tk.FLAT
-        self["width"] = width
         if text is not None:
             self.set_text(text)
     
@@ -33,28 +32,41 @@ class ReadOnlyEntry(tk.Entry):
 
 
 class Application(tk.Frame):
-    def __init__(self, master=None):
+    def __init__(self, master):
         super().__init__(master)
         self.__master = master
         self.__master.protocol("WM_DELETE_WINDOW", self.__on_closing)
+
+        icon_path = "XviD.ico"
+        try:
+            img = ImageTk.PhotoImage(file=icon_path)
+            self.__master.tk.call('wm', 'iconphoto', self.__master._w, img)
+        except tk.TclError as e:
+            print(str(e))
+            messagebox.showerror("Végzetes hiba!", "A program ikonja hiánzyik! {}".format(icon_path))
+            self.__master.destroy()
+            return
+
         self.__main = self.winfo_toplevel()
+
         self.__input = ["input", False]
         self.__output = ["output", False]
         self.__config = "config.ini"
-        self.__width = 1000
+        self.__width = 1100
         self.__height = 400
         self.__progress_thread = None
         self.__converter_lock = th.Lock()
         self.__converter = None 
         self.__saveb = None
+        
         self.__setup_window()
         self.__create_widgets()
+        self.__order_widgets()
         self.__read_cfg()
-        self.pack(fill=tk.BOTH, padx=5, pady=5)
 
     def __on_closing(self):
-        if messagebox.askokcancel("A program bezárása", "Biztos, hogy ki akarsz lépni?"):
-            self.__stop()
+        if messagebox.askyesno("A program bezárása", "Biztos, hogy ki akarsz lépni?"):
+            self.__stop(stay_alive=False)
             self.__master.destroy()
 
     def __read_cfg(self):
@@ -67,9 +79,9 @@ class Application(tk.Frame):
             pass
 
     def __create_widgets(self):
-        self.__dirl = tk.Label(self, text="Az alapértelmezett könyvtár:")
+        self.__dirl = tk.Label(self, text="Az alapértelmezett könyvtár (ha a megadott elérési út mount-olva van!):")
         self.__dire = ReadOnlyEntry(self
-                , text="Még nem adtál meg alapértelmezett könyvárat.")
+                , text="Még nem adtál meg alapértelmezett könyvárat.", width=112)
         self.__dirb = tk.Button(self, text="Választás", command=self.__select_dir)
 
         self.__openl = tk.Label(self, text="Az eredeti file, amit át szeretnél konvertálni:")
@@ -83,9 +95,14 @@ class Application(tk.Frame):
                 , text="Itt jelenik majd meg az új file elérési útvonala."
                 , name=self.__output[0], set_cb=self.__io_set)
         self.__saveb = tk.Button(self, text="Mentés", command=self.__save_output, state=tk.DISABLED)
+
+        self.__command_separator_north = tk.ttk.Separator(self, orient="horizontal")
+
+        self.__command_buttons = tk.Frame(self)
+        self.__startb = tk.Button(self.__command_buttons, text="Start", command=self.__start, state=tk.DISABLED)
+        self.__stopb = tk.Button(self.__command_buttons, text="Stop", command=self.__stop, state=tk.DISABLED)
         
-        self.__startb = tk.Button(self, text="Start", command=self.__start, state=tk.DISABLED)
-        self.__stopb = tk.Button(self, text="Stop", command=self.__stop, state=tk.DISABLED)
+        self.__command_separator_south = tk.ttk.Separator(self, orient="horizontal")
         
         self.__elapsedl = tk.Label(self, text="Az eltelt idő:")
         self.__elapsede = ReadOnlyEntry(self)
@@ -93,35 +110,51 @@ class Application(tk.Frame):
         self.__leftl = tk.Label(self, text="A becsült hátralévő idő:")
         self.__lefte = ReadOnlyEntry(self)
 
-        self.__progressbar = tk.ttk.Progressbar(self, orient="horizontal"
-                , length=self.__width, mode="determinate")
-
-        s = tk.W
-        self.__dirl.grid(sticky=s)
-        self.__dire.grid(sticky=s)
-        self.__dirb.grid(sticky=s)
-        self.__openl.grid(sticky=s)
-        self.__opene.grid(sticky=s)
-        self.__openb.grid(sticky=s)
-        self.__savel.grid(sticky=s)
-        self.__savee.grid(sticky=s)
-        self.__saveb.grid(sticky=s)
-        self.__startb.grid(sticky=s)
-        self.__stopb.grid(sticky=s)
-        self.__elapsedl.grid(sticky=s)
-        self.__elapsede.grid(sticky=s)
-        self.__leftl.grid(sticky=s)
-        self.__lefte.grid(sticky=s)
-        self.__progressbar.grid(sticky=s)
+        self.__progressbar = tk.ttk.Progressbar(self, orient="horizontal", mode="determinate")
         
-        ### TEST ONLY ###
-#        self.__opene.set_text(
-#                "/media/steve/Data/UsersData/Zs&S/Videos/Movies/Dunkirk.2017.RETAiL.BDRip.x264.HuN-No1/sample/!sample.mkv"
-#                "/media/steve/Data/UsersData/Zs&S/Videos/Movies/Dunkirk.2017.RETAiL.BDRip.x264.HuN-No1/dunkirk.bdrip-no1.mkv"
-#                )
-#        self.__savee.set_text(
-#                "/media/steve/Data/UsersData/Zs&S/Videos/Movies/Dunkirk.2017.RETAiL.BDRip.x264.HuN-No1/test.avi")
-        #################
+        logo_path = "XviD_logo.png"
+        try:
+            logo_image = Image.open(logo_path)
+        except tk.TclError:
+            messagebox.showerror("Végzetes hiba!", "A program logója hiánzyik! {}".format(logo_path))
+            self.__master.destroy()
+            return
+
+        lh = 64
+        lw = int(lh * (logo_image.size[0] / logo_image.size[1]))
+        logo_image = logo_image.resize((lw, lh), Image.ANTIALIAS)
+        logo = ImageTk.PhotoImage(logo_image)
+        self.__logo_canvas = tk.Label(self, image=logo)
+        self.__logo_canvas.image = logo
+
+    def __order_widgets(self):
+        self.__dirl.grid(sticky="w")
+        self.__dire.grid(sticky="ew")
+        self.__dirb.grid(sticky="w")
+        self.__openl.grid(sticky="w")
+        self.__opene.grid(sticky="ew")
+        self.__openb.grid(sticky="w")
+        self.__savel.grid(sticky="w")
+        self.__savee.grid(sticky="ew")
+        self.__saveb.grid(sticky="w")
+
+        self.__command_separator_north.grid(sticky="ew", pady=5)
+
+        self.__command_buttons.grid(sticky="w", pady=5)
+        self.__startb.grid(sticky="w", row=0, column=0)
+        self.__stopb.grid(sticky="w", row=0, column=1, padx=(5, 0))
+        
+        self.__command_separator_south.grid(sticky="ew", pady=5)
+        
+        self.__elapsedl.grid(sticky="w", pady=(30, 0))
+        self.__elapsede.grid(sticky="w")
+        self.__leftl.grid(sticky="w")
+        self.__lefte.grid(sticky="w")
+        self.__progressbar.grid(sticky="ew")
+        
+        self.__logo_canvas.grid(sticky="ew", rowspan=5, row=0, column=1)
+
+        self.grid(sticky="nsew", padx=5, pady=5)
 
     def __io_set(self, *args):
         if self.__saveb is None:
@@ -238,7 +271,6 @@ class Application(tk.Frame):
                             if getattr(t, "do_run", True):
                                 percent = (frame / one_percent)
                                 incr = percent - self.__progressbar["value"]
-                                #print(incr, percent, self.__progressbar["value"])
                                 self.__progressbar.step(incr)
                                 percent = frame + one_percent
 
@@ -261,7 +293,11 @@ class Application(tk.Frame):
         self.__progress_thread = None
         #print("### progress thread was stopped")
 
-    def __stop(self):
+    def __stop(self, stay_alive=True):
+        if stay_alive and not messagebox.askyesno("A konvertálás megszakítása"
+                , "Biztos, hogy le akarod állítani a konvertálást?"):
+            return
+
         if self.__progress_thread is not None:
             self.__progress_thread.do_run = False
             self.__stopped()

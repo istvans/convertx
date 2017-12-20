@@ -14,7 +14,7 @@ function ensure_package
 }
 #==============================================================================
 
-ensure_package python3-tk ffmpeg lame x264 libxvidcore4
+ensure_package python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
 
 if [[ -n "$missing" ]]; then
     echo "A program használatához először a következő csomagok telepítésére van szükség:$missing!"
