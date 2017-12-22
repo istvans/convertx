@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [[ ( -z "$DPKG_MAINTSCRIPT_PACKAGE" ) || ( -z "$DPKG_ADMINDIR" ) ]]; then
+    exit 1
+fi
+. $DPKG_ADMINDIR/info/$DPKG_MAINTSCRIPT_PACKAGE.get_icon_file
+
+rm -rf $icon_file
+
+#DEBHELPER#

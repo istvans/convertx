@@ -1,0 +1,11 @@
+convert-x (0.0.2) xenial; urgency=low
+
+  * Fixing directory structure.
+
+ -- István Siroki <stevesiroki@gmail.com>  Fri, 22 Dec 2017 15:01:00 +0100
+
+convert-x (0.0.1) xenial; urgency=low
+
+  * Initial release.
+
+ -- István Siroki <stevesiroki@gmail.com>  Fri, 22 Dec 2017 12:16:09 +0100

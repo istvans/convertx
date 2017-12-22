@@ -1,5 +1,6 @@
-# coding=utf-8
-
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+import os
 import re
 import subprocess
 import threading as th
@@ -37,7 +38,9 @@ class Application(tk.Frame):
         self.__master = master
         self.__master.protocol("WM_DELETE_WINDOW", self.__on_closing)
 
-        icon_path = "XviD.ico"
+        self.__cfg_dir = "/etc/convert-x"
+
+        icon_path = os.path.join(self.__cfg_dir, "XviD.ico")
         try:
             img = ImageTk.PhotoImage(file=icon_path)
             self.__master.tk.call('wm', 'iconphoto', self.__master._w, img)
@@ -51,7 +54,7 @@ class Application(tk.Frame):
 
         self.__input = ["input", False]
         self.__output = ["output", False]
-        self.__config = "config.ini"
+        self.__config = os.path.join(self.__cfg_dir, "config.ini")
         self.__width = 1100
         self.__height = 400
         self.__progress_thread = None
@@ -112,7 +115,7 @@ class Application(tk.Frame):
 
         self.__progressbar = tk.ttk.Progressbar(self, orient="horizontal", mode="determinate")
         
-        logo_path = "XviD_logo.png"
+        logo_path = os.path.join(self.__cfg_dir, "XviD_logo.png")
         try:
             logo_image = Image.open(logo_path)
         except tk.TclError:

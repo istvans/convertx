@@ -1,0 +1,4 @@
+src/config.ini etc/convert-x
+src/XviD.ico etc/convert-x
+src/XviD_logo.png etc/convert-x
+src/conv2xvid usr/bin
