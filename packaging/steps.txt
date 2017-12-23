@@ -1,0 +1,1007 @@
+create compressed orig package(?):
+$ tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+changelog:
+$ dch
+build deb file:
+$ debuild -S -k13470FDD
+
+  644  vim README.Debian 
+  645  vim README.source 
+  646  rm README.*
+  647  ls -hal
+  648  vi source/format 
+  649  vim rules 
+  650  bzr add debian/source/format
+  651  cd ..
+  652  bzr add debian/source/format
+  653  bzr commit -m "Initial commit of Debian packaging."
+  654  bzr builddeb -- -us -uc
+  655  cd ..
+  656  ls -hal
+  657  rm -rf build-area hello hello_2.10.orig.tar.gz 
+  658  bzr dh-make hello 2.10 hello-2.10.tar.gz
+  659  ls -hal
+  660  cd hello/
+  661  ls -hal
+  662  cd debian/
+  663  ls -hal
+  664  rm *ex *EX
+  665  ls -hal
+  666  vim changelog 
+  667  cd ../..
+  668  ls -hal
+  669  rm -rf *
+  670  wget -O hello-2.10.tar.gz "http://ftp.gnu.org/gnu/hello/hello-2.10.tar.gz"
+  671  ls -hal
+  672  tar xf hello-2.10.tar.gz
+  673  ls -hal
+  674  cd hello-2.10/
+  675  ls -hal
+  676  vim configure.ac 
+  677  vim src/
+  678  py3versions
+  679  py3versions -s
+  680  py3versions -si
+  681  py3versions -i
+  682  cd ../..
+  683  cd convertx/
+  684  ls -hal
+  685  vim conv2xvid.py 
+  686  chmod 755 conv2xvid.py 
+  687  ./conv2xvid
+  688  ./conv2xvid.py 
+  689  vim conv2xvid.py 
+  690  ./conv2xvid.py 
+  691  ls -hal
+  692  cat conv2xvid
+  693  git rm conv2xvid
+  694  ls -hal
+  695  vim LICENSE 
+  696  rm sample.out 
+  697  mv msg.txt.gpg ../.
+  698  ls -hal
+  699  rm config.ini 
+  700  ls -hal
+  701  ./conv2xvid.py 
+  702  man dh_make
+  703  /convertx/conv2xvid.py 
+  704  cd dev/convertx/
+  705  ls -hal
+  706  cp /convertx/conv2xvid.py .
+  707  ls -hal
+  708  mv conv2xvid.py conv2xvid
+  709  ls -hal
+  710  vim conv2xvid 
+  711  cp conv2xvid packaging/convertx/.
+  712  ls -hal
+  713  gitk
+  714  git status
+  715  git add conv2xvid
+  716  git status
+  717  ls -hal
+  718  cd package_build_dir/
+  719  ls -hal
+  720  rm convertx.deb 
+  721  ls -hal
+  722  cd convertx/
+  723  ls -hal
+  724  ls -hal *
+  725  cd ..
+  726  ls -hal
+  727  cd dev/
+  728  ls -hal
+  729  cd convertx/
+  730  ls -hal
+  731  mkdir -p packaging/convertx
+  732  cp conv2xvid.py XviD* packaging/convertx/.
+  733  vim README.md 
+  734  cd packaging/convertx/
+  735  cd ..
+  736  ls -hal
+  737  gem install fpm
+  738  sudo apt-get install ruby
+  739  gem install fpm
+  740  sudo gem install fpm
+  741  sudo apt-get install ruby-dev gcc
+  742  sudo gem install fpm
+  743  ls -hal
+  744  fpm -s dir -t deb -a all -n convertx -v 0.1 ./convertx
+  745  ls -hal
+  746  sudo dpkg -i convertx_0.1_all.deb 
+  747  convertx
+  748  ls -halrt /usr/bin/
+  749  ls -halrt /usr/bin/ | less convert
+  750  ls -halrt /usr/bin/ | grep convert
+  751  sudo dpkg -c convertx_0.1_all.deb 
+  752  ls -hal /usr/bin/ | grep conv
+  753  ls -hal /usr/ | grep conv
+  754  ls -hal / | grep conv
+  755  ls -hal /convertx/
+  756  ls -hal /convertx/conv2xvid.py 
+  757  /convertx/conv2xvid.py 
+  758  sudo vim /convertx/conv2xvid.py 
+  759  /convertx/conv2xvid.py 
+  760  sudo vim /convertx/conv2xvid.py 
+  761  ls -hla
+  762  cd convertx/
+  763  ls -hla
+  764  rm conv2xvid.py 
+  765  cd ..
+  766  ls -hal
+  767  fpm -s dir -t deb -a all -n convertx -v 0.1 ./convertx --help | less
+  768  fpm --help | less
+  769  fpm -s python -t deb -a all -n convertx -v 0.1 ./convertx
+  770  ls -hal
+  771  fpm --help | less
+  772  fpm -s python -t deb -a all -n convertx -v 0.1 ./convertx -d ffmpeg
+  773  fpm -s dir -t deb -a all -n convertx -v 0.1 ./convertx -d ffmpeg
+  774  fpm --help | less
+  775  which ffmpeg
+  776  fpm -s dir -t deb -a all -n convertx -v 0.1 ./convertx -d
+  777  fpm -s dir -t deb -a all -n convertx -v 0.1 ./convertx -d usr/bin/ffmpeg
+  778  fpm -s dir -t deb -a all -n convertx -v 0.1 ./convertx -d /usr/bin/ffmpeg
+  779  fpm --help | less
+  780  ls -hal
+  781  cd convertx/
+  782  ls -hal
+  783  vim #!/usr/bin/env python
+  784  vim setup.py
+  785  ls -hal
+  786  vim setup.py
+  787  chmod 755 setup.py
+  788  ls -hal
+  789  vim setup.py
+  790  sudo apt-cache depends gcc
+  791  sudo dpkg -c depends gcc
+  792  sudo dpkg -c gcc
+  793  sudo apt-cache depends gcc
+  794  ls -hal /var/cache/apt/archives/
+  795  dpkg -c /var/cache/apt/archives/ruby-net-telnet_0.1.1-2_all.deb
+  796  sudo apt-cache depends ruby-net-telnet
+  797  sudo apt-cache depends libruby
+  798  dpkg -c libruby2.3_2.3.1-2~16.04.2_amd64.deb
+  799  dpkg -c /var/cache/apt/archives/libruby2.3_2.3.1-2~16.04.2_amd64.deb
+  800  cd dev/convertx/
+  801  ls -hal
+  802  apt-get install python3-stdeb
+  803  sudo apt-get install python3-stdeb
+  804  ls -hal
+  805  cd packaging/
+  806  ls -hal
+  807  rm convertx_0.1_all.deb 
+  808  ls -hal
+  809  cd convertx/
+  810  ls -hal
+  811  mkdir conv2xvid
+  812  mv conv2xvid conv2xvid.py
+  813  mkdir conv2xvid
+  814  mv conv2xvid.py XviD* conv2xvid/.
+  815  ls -hal
+  816  cd conv2xvid/
+  817  ls -hal
+  818  touch __init__.py
+  819  ls -hal
+  820  cd ..
+  821  vim setup.py 
+  822  ./conv2xvid/conv2xvid.py 
+  823  vim setup.py 
+  824  ls -hal
+  825  cd ../../
+  826  ls -hal
+  827  rm -rf packaging
+  828  ls -hal
+  829  ls -hal /home/steve/Desktop/
+  830  echo $USER
+  831  sudo echo $USER
+  832  ls -ha
+  833  cd package_build_dir/
+  834  ls -hal
+  835  vim convertx/DEBIAN/postinst 
+  836  sudo apt-get remove python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+  837  sudo apt-get autoremove
+  838  ls -hal
+  839  cd dev/convertx/
+  840  ls -hal
+  841  mkdir package_build_dir
+  842  cd package_build_dir
+  843  ls -hal
+  844  mkdir convertx
+  845  mkdir convertx/DEBIAN
+  846  vim convertx/DEBIAN/control
+  847  ls -hal
+  848  cd convertx/
+  849  ls -hal
+  850  mkdir -p usr/bin
+  851  ls -hal
+  852  ls -hal /usr/bin
+  853  ls -hal /etc/
+  854  ls -hal /etc/apache2/
+  855  ls -hal /etc/apache2/conf-available/
+  856  ls -hal
+  857  mkdir -p etc/convertx
+  858  ls -hal
+  859  cd usr/bin/
+  860  ls -hal
+  861  cp ../../../../conv2xvid .
+  862  ls -hal
+  863  vim conv2xvid 
+  864  cp conv2xvid ../../../../
+  865  cd ../../../../
+  866  ls -hal
+  867  cd -
+  868  ls -hal
+  869  cd ..
+  870  ..
+  871  cd ..
+  872  ls -hal
+  873  cd etc/convertx/
+  874  ls -hal
+  875  cp ../../../../XviD* .
+  876  ls -hal
+  877  cd ../../
+  878  ls -hal
+  879  vim DEBIAN/control 
+  880  vim DEBIAN/postinst
+  881  ls -hal
+  882  cd DEBIAN/
+  883  ls -hal
+  884  chmod 755 postinst 
+  885  ls -hal
+  886  apt-get --help
+  887  apt-get install --help
+  888  apt-get install --help | less
+  889  apt-get install | less
+  890  ls -hal
+  891  cd ../../
+  892  ls -hal
+  893  dpkg-deb --build convertx
+  894  vim convertx/DEBIAN/control
+  895  dpkg-deb --build convertx
+  896  vim convertx/DEBIAN/control
+  897  dpkg-deb --build convertx
+  898  ls -hal
+  899  sudo apt-get -f install
+  900  ls -hal
+  901  sudo apt-get install ./convertx.deb
+  902  ls -hal /usr/bin/conv2xvid 
+  903  ls -hal /usr/bin/
+  904  /usr/bin/conv2xvid 
+  905  ls -hal /etc/convertx/
+  906  /usr/bin/conv2xvid 
+  907  ls -hal
+  908  ls -hal /etc/convertx/
+  909  sudo apt-get remove convertx
+  910  ls -hal /etc/convertx/
+  911  rm -rf /etc/convertx/
+  912  sudo rm -rf /etc/convertx/
+  913  ls -hal
+  914  rm convertx.deb 
+  915  ls -hla
+  916  cd convertx/
+  917  ls -hal
+  918  cd etc/convertx/
+  919  ls -hal
+  920  touch config.ini
+  921  ls -hal
+  922  cd ../..
+  923  ls -hal
+  924  cd DEBIAN/
+  925  ls -hal
+  926  vim control 
+  927  vim postinst 
+  928  cd ../../../
+  929  ls -hal
+  930  cd package_build_dir/
+  931  ls -hal
+  932  dpkg-deb --build convertx
+  933  ls -hal
+  934  sudo apt-get autoremove
+  935  sudo apt-get clean
+  936  sudo apt-get autoclean
+  937  sudo apt-get remove ffmpeg
+  938  sudo apt-get autoremove
+  939  ls -hal
+  940  sudo apt-get install ./convertx.deb
+  941  ls -hal
+  942  mkdir install
+  943  mv convertx.deb install/.
+  944  ls -hal
+  945  cd install/
+  946  ls -hal
+  947  sudo apt-get install ./convertx.deb
+  948  ls -hal
+  949  cd ..
+  950  ls -hal
+  951  cd -
+  952  cd ..
+  953  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+  954  sudo apt-get autoremove
+  955  ls -hal
+  956  rm -rf install/
+  957  ls -hal
+  958  cd convertx/
+  959  ls -hal
+  960  cd DEBIAN/
+  961  ls -hal
+  962  ./postinst 
+  963  vim ./postinst 
+  964  ./postinst 
+  965  clear
+  966  cd ../../
+  967  clear
+  968  ls -hal
+  969  dpkg-deb --build convertx
+  970  ls -hal
+  971  sudo apt-get install ./convertx.deb
+  972  less /var/log/syslog
+  973  less /var/log/auth.log
+  974  less /var/log/faillog 
+  975  less /var/log/dpkg.log
+  976  less /var/log/dpkg.log.1 
+  977  ls -hal
+  978  vim convertx/DEBIAN/postinst 
+  979  dpkg-deb --build convertx
+  980  sudo apt-get install ./convertx.deb
+  981  less /var/log/dpkg.log
+  982  sudo apt-get remove ./convertx.deb
+  983  sudo apt-get remove convertx
+  984  sudo apt-get install ./convertx.deb
+  985  vim convertx/DEBIAN/postinst 
+  986  echo $LOGNAME
+  987  echo $logname
+  988  vim convertx/DEBIAN/postinst 
+  989  cd ..
+  990  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+  991  dpkg-deb --build convertx
+  992  ls -hal
+  993  cd package_build_dir/
+  994  ls -hal
+  995  rm convertx.deb 
+  996  dpkg-deb --build convertx
+  997  ls -hal
+  998  sudo apt-get install -f ./convertx.deb
+  999  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1000  env
+ 1001  env ~ wc -l
+ 1002  env | wc -l
+ 1003  set | wc -l
+ 1004  set
+ 1005  env
+ 1006  vim convertx/DEBIAN/postinst 
+ 1007  sudo apt-get install -f ./convertx.deb
+ 1008  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1009  dpkg-deb --build convertx
+ 1010  sudo apt-get install -f ./convertx.deb
+ 1011  vim convertx/DEBIAN/postinst 
+ 1012  dpkg-deb --build convertx
+ 1013  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1014  sudo apt-get install -f ./convertx.deb
+ 1015  ls -hal
+ 1016  vim convertx/DEBIAN/postinst 
+ 1017  ls -hal
+ 1018  rm convertx.deb 
+ 1019  dpkg-deb --build convertx
+ 1020  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1021  sudo apt-get install -f ./convertx.deb
+ 1022  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1023  vim convertx/DEBIAN/postinst 
+ 1024  ls -hal
+ 1025  dpkg-deb --build convertx
+ 1026  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1027  sudo apt-get install -f ./convertx.deb
+ 1028  ls -hal /etc/convertx/
+ 1029  ls -hal
+ 1030  vim convertx/DEBIAN/postinst 
+ 1031  ls -hal
+ 1032  rm convertx.deb 
+ 1033  dpkg-deb --build convertx
+ 1034  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1035  sudo apt-get install -f ./convertx.deb
+ 1036  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1037  chown
+ 1038  vim convertx/DEBIAN/postinst 
+ 1039  chown --help
+ 1040  vim convertx/DEBIAN/postinst 
+ 1041  dpkg-deb --build convertx
+ 1042  sudo apt-get install -f ./convertx.deb
+ 1043  vim convertx/DEBIAN/postinst 
+ 1044  chmod 755 convertx/DEBIAN/postrm 
+ 1045  ls -hal
+ 1046  rm convertx.deb 
+ 1047  dpkg-deb --build convertx
+ 1048  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1049  sudo apt-get install -f ./convertx.deb
+ 1050  rm convertx.deb 
+ 1051  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1052  cd convertx/DEBIAN/
+ 1053  ls -hal
+ 1054  ./postinst 
+ 1055  vim ./postinst 
+ 1056  ./postinst 
+ 1057  vim ./postinst 
+ 1058  echo $SUDO_USER/
+ 1059  echo $SUDO_USER
+ 1060  echo $USER
+ 1061  ls -hal ~$USER/
+ 1062  ls -hal /home/$USER/
+ 1063  vim ./postinst 
+ 1064  ./postinst 
+ 1065  vim ./postinst 
+ 1066  ./postinst 
+ 1067  echo $?
+ 1068  vim ./postinst ./postrm -o
+ 1069  ls -hal
+ 1070  mv get_path get_icon_file
+ 1071  vim get_icon_file 
+ 1072  ls -ha
+ 1073  ls -hal
+ 1074  ./postinst 
+ 1075  ./postrm 
+ 1076  echo $?
+ 1077  cd ../..
+ 1078  ls -hal
+ 1079  dpkg-deb --build convertx
+ 1080  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1081  sudo apt-get install -f ./convertx.deb
+ 1082  ls -hal /var/lib/dpkg/info/
+ 1083  pwd
+ 1084  ls -hal
+ 1085  cd convertx/DEBIAN/
+ 1086  ls -hal
+ 1087  vim ./postrm ./postinst -o
+ 1088  cd ../..
+ 1089  ls -hal
+ 1090  rm convertx.deb 
+ 1091  dpkg-deb --build convertx
+ 1092  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1093  ls -hal
+ 1094  sudo apt-get install -f ./convertx.deb
+ 1095  echo $PWD
+ 1096  rm convertx.deb 
+ 1097  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1098  vim convertx/DEBIAN/postinst convertx/DEBIAN/postrm -o
+ 1099  dpkg-deb --build convertx
+ 1100  sudo apt-get install -f ./convertx.deb
+ 1101  vim convertx/DEBIAN/postinst convertx/DEBIAN/postrm -o
+ 1102  convertx/DEBIAN/postinst
+ 1103  vim convertx/DEBIAN/postinst convertx/DEBIAN/postrm -o
+ 1104  convertx/DEBIAN/postinst
+ 1105  vim convertx/DEBIAN/postinst convertx/DEBIAN/postrm -o
+ 1106  convertx/DEBIAN/postinst
+ 1107  vim convertx/DEBIAN/postinst convertx/DEBIAN/postrm -o
+ 1108  convertx/DEBIAN/postinst
+ 1109  vim convertx/DEBIAN/postinst convertx/DEBIAN/postrm -o
+ 1110  clear
+ 1111  dpkg-deb --build convertx
+ 1112  s -hal
+ 1113  ls -hal
+ 1114  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1115  sudo apt-get install -f ./convertx.deb
+ 1116  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1117  dch -i
+ 1118  ls -hal
+ 1119  cd convertx/
+ 1120  dch -i
+ 1121  dch -i --create
+ 1122  dch -i
+ 1123  cd ..
+ 1124  ls -hal
+ 1125  dput ppa:isiroki/convert-x 
+ 1126  dpkg-deb --build convertx
+ 1127  debuild -S -sa
+ 1128  ls -hal
+ 1129  cd convertx/
+ 1130  ls -hal
+ 1131  debuild -S -sa
+ 1132  mv DEBIAN debian
+ 1133  debuild -S -sa
+ 1134  touch debian/changelog
+ 1135  debuild -S -sa
+ 1136  vim debian/changelog
+ 1137  cd ../..
+ 1138  git log --pretty=%s --first-parent
+ 1139  cd -
+ 1140  ls -hal
+ 1141  cd ..
+ 1142  ls -hal
+ 1143  dpkg-deb --build convertx
+ 1144  cd convertx/
+ 1145  ls -hal
+ 1146  cd ..
+ 1147  ls -hal
+ 1148  cd convertx/
+ 1149  ls -hal
+ 1150  mv debian DEBIAN
+ 1151  ls -hal
+ 1152  cd ..
+ 1153  debuild -S
+ 1154  dh-make
+ 1155  cat ~/.config/user-dirs.locale
+ 1156  cat ~/.config/user-dirs.locale/
+ 1157  cat ~/.config/user-dirs.locale
+ 1158  cat ~/.config/user-dirs.dirs 
+ 1159  fgrep XDG_DESKTOP_DIR ~/.config/user-dirs.dirs 
+ 1160  fgrep XDG_DESKTOP_DIR $SUDO_USER/.config/user-dirs.dirs 
+ 1161  fgrep XDG_DESKTOP_DIR ~/.config/user-dirs.dirs 
+ 1162  basename $(fgrep XDG_DESKTOP_DIR ~/.config/user-dirs.dirs)
+ 1163  fgrep XDG_DESKTOP_DIR ~/.config/user-dirs.dirs 
+ 1164  fgrep XDG_DESKTOP_DIR ~/.config/user-dirs.dirs | sed 's#"##g'
+ 1165  basename $(fgrep XDG_DESKTOP_DIR ~/.config/user-dirs.dirs | sed 's#"##g')
+ 1166  lsb_release -a
+ 1167  vim ~/.dput.cf
+ 1168  dput my-ppa convert-x_0.1_source.changes
+ 1169  cat ~/.dput.cf 
+ 1170  dput convert-x convert-x_0.1_source.changes
+ 1171  dch --create 
+ 1172  cd dev/convertx/
+ 1173  ls -hal
+ 1174  cd package_build_dir/
+ 1175  ls -al
+ 1176  cd convertx/
+ 1177  ls -hal
+ 1178  mv DEBIAN debian
+ 1179  dch --create 
+ 1180  rm debian/changelog 
+ 1181  dch --create 
+ 1182  ls -hal debian/
+ 1183  cat debian/changelog 
+ 1184  ls -hal
+ 1185  debuild
+ 1186  cd debian/
+ 1187  ls -hal
+ 1188  vim control 
+ 1189  vim rules
+ 1190  cd ..
+ 1191  dh binary-arch --no-act
+ 1192  man dh
+ 1193  ls -hal
+ 1194  cd ..
+ 1195  dh binary-arch --no-act
+ 1196  man dh
+ 1197  vim convertx/debian/rules 
+ 1198  dh binary-arch --no-act
+ 1199  ls -hla
+ 1200  cd convertx/
+ 1201  ls -hal
+ 1202  echo 10 > debian/compa
+ 1203  echo 10 > debian/compat
+ 1204  rm debian/compa
+ 1205  ls -hal debian/
+ 1206  dh binary-arch --no-act
+ 1207  dh build --no-act
+ 1208  dh install --no-act
+ 1209  vim debian/rules 
+ 1210  dh install --no-act
+ 1211  dh build --no-act
+ 1212  dput convert-x convert-x_0.0.1_source.changes
+ 1213  ls -hal
+ 1214  vim debian/changelog 
+ 1215  man debuild
+ 1216  debuild
+ 1217  vim debian/control 
+ 1218  debuild
+ 1219  vim debian/control 
+ 1220  debuild
+ 1221  vim debian/control 
+ 1222  debuild
+ 1223  vim debian/control 
+ 1224  debuild
+ 1225  vim debian/control 
+ 1226  debuild
+ 1227  gpg2 --list-secret-keys
+ 1228  gpg --list-secret-keys
+ 1229  gpg2 --export-secret-keys 13470FDD > private.key
+ 1230  gpg --import private.key 
+ 1231  gpg2 --list-secret-keys
+ 1232  gpg --list-secret-keys
+ 1233  ls -hal
+ 1234  rm private.key 
+ 1235  ls -hal
+ 1236  clear
+ 1237  debuild
+ 1238  gpg --list-secret-keys
+ 1239  gpg --edit-key 13470FDD trust quit
+ 1240  gpg --list-secret-keys
+ 1241  gpg2 --list-secret-keys
+ 1242  debuild
+ 1243  ls -hal
+ 1244  ls -hal debian/
+ 1245  ls -hal debian/convert-x
+ 1246  ls -hal debian/convert-x/DEBIAN/
+ 1247  ls -hal debian/convert-x/usr/
+ 1248  ls -hal
+ 1249  cd debian/
+ 1250  ls -hal
+ 1251  rm -rf convert-x* debhelper-build-stamp files 
+ 1252  ls -hal
+ 1253  cd ../..
+ 1254  ls -hal
+ 1255  rm convert-x_0.0.1*
+ 1256  ls -hal
+ 1257  sudo reboot now
+ 1258  cd dev/
+ 1259  ls -hal
+ 1260  cd convertx/
+ 1261  ls -hal
+ 1262  cd package_build_dir/
+ 1263  ls -hal
+ 1264  debuild
+ 1265  cd convertx/
+ 1266  debuild
+ 1267  gpg --list-keys
+ 1268  echo $DEBSIGN_KEYID
+ 1269  export DEBSIGN_KEYID=13470FDD
+ 1270  echo $DEBSIGN_KEYID
+ 1271  debuild
+ 1272  unset $DEBSIGN_KEYID
+ 1273  unset DEBSIGN_KEYID
+ 1274  echo $DEBSIGN_KEYID
+ 1275  dch
+ 1276  man debuild
+ 1277  vim debian/control 
+ 1278  debhelper --version
+ 1279  vim debian/control 
+ 1280  debuild
+ 1281  vim debian/control 
+ 1282  debuild
+ 1283  mkdir debian/source
+ 1284  vim debian/source/format
+ 1285  ls -hal
+ 1286  vim debian/control 
+ 1287  debuild
+ 1288  cd ../
+ 1289  ls -hal
+ 1290  mv convertx convertx-0.0.1
+ 1291  ls -hal
+ 1292  tar czf convertx_0.0.1.orig.tar.gz convertx-0.0.1
+ 1293  ls -hal
+ 1294  cd convertx-0.0.1/
+ 1295  debuild
+ 1296  cd ..
+ 1297  ls -hal
+ 1298  mv convertx-0.0.1 convert-x-0.0.1
+ 1299  ls -hal
+ 1300  rm convertx_0.0.1.orig.tar.gz
+ 1301  rm convert-x_0.0.1_*
+ 1302  ls -hal
+ 1303  rm convert-x_0.0.1.dsc convert-x_0.0.1.tar.gz 
+ 1304  ls -hal
+ 1305  tar czf convert-x_0.0.1.orig.tar.gz convert-x-0.0.1
+ 1306  ls -hal
+ 1307  cd convert-x-0.0.1/
+ 1308  debuild
+ 1309  vim debian/control 
+ 1310  debuild
+ 1311  vim debian/control 
+ 1312  debuild
+ 1313  vim debian/postinst 
+ 1314  vim debian/postrm 
+ 1315  debuild
+ 1316  ls -hal .././
+ 1317  ls -hal ../../
+ 1318  cp ../../LICENSE debian/copyright
+ 1319  vim debian/copyright
+ 1320  debuild
+ 1321  vim debian/copyright
+ 1322  debuild
+ 1323  vim debian/control 
+ 1324  debuild
+ 1325  vim debian/control 
+ 1326  debuild
+ 1327  vim debian/copyright 
+ 1328  vim debian/control 
+ 1329  debuild
+ 1330  vim debian/control 
+ 1331  debuild
+ 1332  cd ..
+ 1333  tar czf convert-x_0.0.1.orig.tar.gz convert-x-0.0.1
+ 1334  cd -
+ 1335  debuild
+ 1336  gpg --list-secret-keys
+ 1337  debuild -S -rfakeroot -k13470FDD
+ 1338  cd ..
+ 1339  ls -hal
+ 1340  dput ppa:isiroki/convert-x convert-x_0.0.1_source.changes
+ 1341  ls -hal
+ 1342  cd ..
+ 1343  ls -hal
+ 1344  mv package_build_dir packaging
+ 1345  ls -hal
+ 1346  cd packaging/
+ 1347  ls -hal
+ 1348  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1349  sudo apt-get autoremove
+ 1350  sudo add-apt-repository ppa:isiroki/convert-x
+ 1351  ls -hal
+ 1352  sudo apt-get install -f ./convert-x_0.0.1_all.deb
+ 1353  ls -hal /var/lib/dpkg/info/
+ 1354  ls -hal
+ 1355  cp -r convert-x-0.0.1/* convert-x-0.0.2/.
+ 1356  mkdir convert-x-0.0.2
+ 1357  cp -r convert-x-0.0.1/* convert-x-0.0.2/.
+ 1358  ls -hal
+ 1359  cd convert-x-0.0.2/
+ 1360  ls -hal
+ 1361  vim debian/postinst 
+ 1362  ls -hal
+ 1363  cd etc/
+ 1364  ls -hal
+ 1365  mv convertx convert-x
+ 1366  ls -hal
+ 1367  cd convert-x/
+ 1368  ls -hal
+ 1369  cd ../
+ 1370  ls -hal
+ 1371  cd .
+ 1372  cd ..
+ 1373  ls -hal
+ 1374  cd usr/bin/
+ 1375  ls -hal
+ 1376  vim conv2xvid 
+ 1377  cd ../../
+ 1378  ls -hal
+ 1379  dch
+ 1380  debuild
+ 1381  cd ..
+ 1382  ls -hal
+ 1383  tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+ 1384  cd -
+ 1385  debuild
+ 1386  cd ..
+ 1387  ls -hal
+ 1388  mv convert-x_0.0.2.orig.tar.gz convert-x_0.0.2ubuntu1.orig.tar.gz
+ 1389  cd -
+ 1390  debuild
+ 1391  cd ..
+ 1392  ls -hal
+ 1393  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1394  sudo apt-get autoremove
+ 1395  ls -hal
+ 1396  sudo apt-get install -f ./convert-x_0.0.2ubuntu1_all.deb
+ 1397  ls -hal /var/lib/dpkg/info/convert-x.get_icon_file
+ 1398  cd convert-x-0.0.2/
+ 1399  ls -hal
+ 1400  cd debian/
+ 1401  ls -hal
+ 1402  vim get_icon_file 
+ 1403  vim get_icon_file post* -o
+ 1404  ls -hal
+ 1405  rm get_icon_file 
+ 1406  ls -hal
+ 1407  cd ..
+ 1408  ls -hal
+ 1409  gbg
+ 1410  gpg
+ 1411  gpg --list-keys
+ 1412  debuild -k13470FDD
+ 1413  cd ..
+ 1414  mv convert-x_0.0.2.orig.tar.gz convert-x_0.0.2ubuntu1.orig.tar.gz
+ 1415  tar czf convert-x_0.0.2ubuntu1.orig.tar.gz convert-x-0.0.2
+ 1416  ls -hal
+ 1417  cd -
+ 1418  debuild -k13470FDD
+ 1419  cd ..
+ 1420  ls -hal
+ 1421  sudo apt-get install -f ./convert-x_0.0.2ubuntu1_all.deb
+ 1422  sudo apt-get remove convertx python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1423  sudo apt-get remove convert-x python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1424  sudo apt-get install -f ./convert-x_0.0.2ubuntu1_all.deb
+ 1425  ls -hal /etc/convert-x/
+ 1426  ls -hal /usr/bin/conv2xvid
+ 1427  ls -hal
+ 1428  dpkg -c convert-x_0.0.2ubuntu1_all.deb
+ 1429  ls -hal
+ 1430  cd convert-x-0.0.2
+ 1431  ls -hal
+ 1432  dh_make -i --createorig
+ 1433  ls -hal
+ 1434  ls -hla
+ 1435  ls -hla etc/
+ 1436  ls -hla etc/convert-x/
+ 1437  mv etc/convert-x/* .
+ 1438  ls -hal
+ 1439  mv usr/bin/conv2xvid .
+ 1440  ls -hal
+ 1441  ls -hal etc/convert-x/
+ 1442  rm -rf etc
+ 1443  ls -hal usr/bin/
+ 1444  rm -rf usr
+ 1445  ls -hal
+ 1446  vim Makefile
+ 1447  ls -hal
+ 1448  debuild
+ 1449  ls -hal
+ 1450  sudo apt-get remove convert-x python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1451  clear
+ 1452  cd dev/convertx/
+ 1453  ls -hal
+ 1454  cd packaging/
+ 1455  ls -hal
+ 1456  dpkg -c convert-x_0.0.2ubuntu1_all.deb
+ 1457  cd convert-x-0.0.2
+ 1458  ls -hal
+ 1459  vim debian/changelog 
+ 1460  ls -hal
+ 1461  vim Makefile 
+ 1462  debuild
+ 1463  mkdir -p etc/convert-x
+ 1464  mkdir -p usr/bin
+ 1465  ls -hal
+ 1466  mv XviD* etc/convert-x/.
+ 1467  mv config.ini etc/convert-x/.
+ 1468  mv conv2xvid usr/bin/.
+ 1469  ls -hal
+ 1470  rm Makefile 
+ 1471  debuild
+ 1472  cd ..
+ 1473  ls -hal
+ 1474  rm *ubuntu1*
+ 1475  ls -hal
+ 1476  dpkg -c convert-x_0.0.2_all.deb
+ 1477  rm convert-x_0.0.2_*
+ 1478  ls -hal
+ 1479  rm convert-x_0.0.2.*
+ 1480  ls -hal
+ 1481  tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+ 1482  ls -hal
+ 1483  cd convert-x-0.0.2/
+ 1484  debuild
+ 1485  ls -hal
+ 1486  cd ..
+ 1487  ls -hal
+ 1488  dpkg -c convert-x_0.0.2_all.deb
+ 1489  cd convert-x-0.0.2
+ 1490  ls -hal
+ 1491  vim debian/install
+ 1492  mkdir src
+ 1493  mv etc/convert-x/* src/.
+ 1494  mv usr/bin/conv2xvid src/.
+ 1495  ls -hal
+ 1496  ls -hal etc/convert-x/
+ 1497  rm -rf etc
+ 1498  ls -hal usr/bin/
+ 1499  rm -rf usr
+ 1500  ls -hal
+ 1501  ls -hal src/
+ 1502  vim debian/install
+ 1503  debuild
+ 1504  debuild --include-removal
+ 1505  debuild
+ 1506  cd ..
+ 1507  ls -hal
+ 1508  tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+ 1509  cd -
+ 1510  debuild
+ 1511  cd ..
+ 1512  dpkg -c convert-x_0.0.2_all.deb
+ 1513  sudo apt-get install -f convert-x_0.0.2_all.deb
+ 1514  sudo apt-get install -f ./convert-x_0.0.2_all.deb
+ 1515  sudo apt-get remove convert-x python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1516  ls -hal
+ 1517  rm convert-x_0.0.1[_.]*
+ 1518  ls -hal
+ 1519  cd convert-x-0.0.2
+ 1520  ls -hal
+ 1521  vim debian/postinst 
+ 1522  vim debian/postrm 
+ 1523  vim debian/postinst 
+ 1524  cd ..
+ 1525  tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+ 1526  ls -ha
+ 1527  ls -hal
+ 1528  cd convert-x-0.0.2/
+ 1529  gpg
+ 1530  gpg --list-keys
+ 1531  debuild -k13470FDD
+ 1532  cd ..
+ 1533  ls -hal
+ 1534  dpkg -c convert-x_0.0.2_all.deb
+ 1535  ls -hal
+ 1536  sudo apt-get install -f ./convert-x_0.0.2_all.deb
+ 1537  sudo apt-get install vlc
+ 1538  ls -hal
+ 1539  dput ppa:isiroki/convert-x convert-x_0.0.2_amd64.changes
+ 1540  ls -hal
+ 1541  tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+ 1542  cd convert-x-0.0.2/
+ 1543  debuild -S -k13470FDD
+ 1544  cd ..
+ 1545  ls -hal
+ 1546  dput ppa:isiroki/convert-x convert-x_0.0.2_source.changes 
+ 1547  ls -hal
+ 1548  rm convert-x_0.0.2*
+ 1549  ls -hal
+ 1550  cd convert-x-0.0.2/
+ 1551  ls -hal
+ 1552  cd debian/
+ 1553  ls -hal
+ 1554  rm -rf source
+ 1555  ls -hal
+ 1556  cd ..
+ 1557  ls -hal
+ 1558  cd ..
+ 1559  ls -hal
+ 1560  cd convert-x-0.0.1
+ 1561  ls -hal
+ 1562  rm -rf etc usr
+ 1563  ls -hal
+ 1564  cd debian/
+ 1565  ls -hal
+ 1566  rm -rf source/
+ 1567  ls -hal
+ 1568  cd ..
+ 1569  ls -hal
+ 1570  cd ..
+ 1571  ls -hal
+ 1572  vim .gitignore 
+ 1573  git status
+ 1574  git rm conv2xvid.py
+ 1575  git status
+ 1576  ls -hal
+ 1577  git add packaging
+ 1578  git status
+ 1579  vim conv2xvid 
+ 1580  cp packaging/convert-x-0.0.2/src/conv2xvid .
+ 1581  ls -hal
+ 1582  vim conv2xvid 
+ 1583  git status
+ 1584  git add conv2xvid 
+ 1585  git status
+ 1586  git commit
+ 1587  git push origin master --thin
+ 1588  sudo add-apt-repository ppa:isiroki/convert-x
+ 1589  sudo apt-get update
+ 1590  sudo apt-get remove convert-x python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1591  sudo apt-get autoremove
+ 1592  clear
+ 1593  sudo apt-get install convert-x
+ 1594  sudo apt-get install gimp
+ 1595  sudo apt-get remove convert-x python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1596  sudo apt-get autoremove
+ 1597  clear
+ 1598  sudo add-apt-repository üüremove ppa:isiroki/convert-x
+ 1599  sudo add-apt-repository --remove ppa:isiroki/convert-x
+ 1600  sudo apt-get update
+ 1601  sudo apt-get install convert-x
+ 1602  scrot -cd 5
+ 1603  sudo apt install scrot
+ 1604  scrot -cd 5
+ 1605  scrot --help
+ 1606  scrot -cd 5
+ 1607  ls -ha
+ 1608  rm 2017-12-23-000*
+ 1609  ls -hal
+ 1610  cd 
+ 1611  cd Pictures/
+ 1612  ls -hal
+ 1613  scrot -cd 5
+ 1614  ls -hal
+ 1615  eog 2017-12-23-000622_1366x768_scrot.png 
+ 1616  rm 2017-12-23-000622_1366x768_scrot.png 
+ 1617  scrot -cd 5
+ 1618  eog 2017-12-23-000702_1366x768_scrot.png 
+ 1619  mv 2017-12-23-000702_1366x768_scrot.png desktop2.png 
+ 1620  ls -hal
+ 1621  eog desktop3.png 
+ 1622  sudo apt-get remove convert-x python3-tk ffmpeg lame x264 libxvidcore4 python3-pil.imagetk
+ 1623  sudo apt-get remove convert-x 
+ 1624  sudo apt-get autoremove 
+ 1625  sudo apt-get autoclean
+ 1626  sudo apt-get clean
+ 1627  df -h
+ 1628  df -h .
+ 1629  cd
+ 1630  cd dev/convertx/
+ 1631  cd ..
+ 1632  ls -hal
+ 1633  rm -rf packaging
+ 1634  ls -hal
+ 1635  rm gpg2.txt msg.txt.gpg UbuntuCodeofConduct-2.0.txt*
+ 1636  ls -hal
+ 1637  cd convertx/
+ 1638  ls -hal
+ 1639  cd packaging/
+ 1640  ls -hal
+ 1641  history --help
+ 1642  history 
+ 1643  history  > steps.txt
