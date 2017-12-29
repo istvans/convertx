@@ -38,9 +38,20 @@ class Application(tk.Frame):
         self.__master = master
         self.__master.protocol("WM_DELETE_WINDOW", self.__on_closing)
 
-        self.__cfg_dir = "/etc/convert-x"
+        self.__package = "convert-x"
+        self.__etc = "/etc"
 
-        icon_path = os.path.join(self.__cfg_dir, "XviD.ico")
+        self.__readonly_dir = os.path.join(self.__etc, self.__package)
+        if not os.path.exists(self.__readonly_dir):
+            messagebox.showerror("Végzetes hiba!", "A program alap mappája hiánzyik! {}".format(self.__readonly_dir))
+            self.__master.destroy()
+            return
+
+        self.__cfg_dir = os.path.join(os.environ["HOME"], '.' + self.__package)
+        if not os.path.exists(self.__cfg_dir):
+            os.makedirs(self.__cfg_dir)
+
+        icon_path = os.path.join(self.__readonly_dir, "XviD.ico")
         try:
             img = ImageTk.PhotoImage(file=icon_path)
             self.__master.tk.call('wm', 'iconphoto', self.__master._w, img)
@@ -82,9 +93,9 @@ class Application(tk.Frame):
             pass
 
     def __create_widgets(self):
-        self.__dirl = tk.Label(self, text="Az alapértelmezett könyvtár (ha a megadott elérési út mount-olva van!):")
+        self.__dirl = tk.Label(self, text="Az alapértelmezett mappa (ha a megadott elérési út mount-olva van!):")
         self.__dire = ReadOnlyEntry(self
-                , text="Még nem adtál meg alapértelmezett könyvárat.", width=112)
+                , text="Még nem adtál meg alapértelmezett mappát.", width=112)
         self.__dirb = tk.Button(self, text="Választás", command=self.__select_dir)
 
         self.__openl = tk.Label(self, text="Az eredeti file, amit át szeretnél konvertálni:")
@@ -115,7 +126,7 @@ class Application(tk.Frame):
 
         self.__progressbar = tk.ttk.Progressbar(self, orient="horizontal", mode="determinate")
         
-        logo_path = os.path.join(self.__cfg_dir, "XviD_logo.png")
+        logo_path = os.path.join(self.__readonly_dir, "XviD_logo.png")
         try:
             logo_image = Image.open(logo_path)
         except tk.TclError:
