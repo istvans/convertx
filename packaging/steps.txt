@@ -1,5 +1,17 @@
 setup:
-export DEBEMAIL="István Siroki <stevesiroki@gmail.com>"
+$ export DEBEMAIL="István Siroki <stevesiroki@gmail.com>"
+
+how to recover the missing gpg key:
+1st: create a key then backup!!!
+$ gpg --gen-key
+$ export GPGKEY=3BC494EE
+$ gpg --send-keys --keyserver keyserver.ubuntu.com 3BC494EE
+$ sudo gpg -ao /etc/keys/pub.key --export 3BC494EE
+$ sudo gpg -ao /etc/keys/private.key --export-secret-keys 3BC494EE
+then to recover the key:
+$ sudo cd /etc/keys
+$ gpg --import private.key
+$ gpg --import pub.key
 
 create compressed orig package(?):
 $ tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2

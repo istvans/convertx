@@ -1,0 +1,20 @@
+convert-x (0.0.3) xenial; urgency=low
+
+  * Moving config under HOME
+  * Window size is set based on the screen dimensions
+  * Logo moved to the background to suppot smaller screens
+  * Fixing typo
+
+ -- István Siroki <stevesiroki@gmail.com>  Fri, 29 Dec 2017 01:47:29 +0100
+
+convert-x (0.0.2) xenial; urgency=low
+
+  * Fixing directory structure.
+
+ -- István Siroki <stevesiroki@gmail.com>  Fri, 22 Dec 2017 15:01:00 +0100
+
+convert-x (0.0.1) xenial; urgency=low
+
+  * Initial release.
+
+ -- István Siroki <stevesiroki@gmail.com>  Fri, 22 Dec 2017 12:16:09 +0100
