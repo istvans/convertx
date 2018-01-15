@@ -1,0 +1,14 @@
+#!/bin/bash
+
+### TODO: move this into a common file ###
+if [[ ( -z "$HOME" ) || ( -z "$DPKG_MAINTSCRIPT_PACKAGE" ) || ( -z "$DPKG_ADMINDIR" ) ]]; then
+    exit 1
+fi
+desktop_path=$(fgrep XDG_DESKTOP_DIR $HOME/.config/user-dirs.dirs | sed 's#"##g')
+desktop_name=$(basename $desktop_path)
+icon_file="$HOME/$desktop_name/Conv2XviD.desktop"
+###########################################
+
+rm -rf $icon_file
+
+#DEBHELPER#

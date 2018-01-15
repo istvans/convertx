@@ -18,7 +18,9 @@ $ tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
 changelog:
 $ dch
 build deb file:
-$ debuild -S -k13470FDD
+$ debuild -S -k3BC494EE
+upload:
+dput ppa:isiroki/convert-x <source.changes>
 
   644  vim README.Debian 
   645  vim README.source 
