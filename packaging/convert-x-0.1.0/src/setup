@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ -z "$DISPLAY" ]]; then
+    exit 1
+fi
+
+export desktop_path=$(fgrep XDG_DESKTOP_DIR $HOME/.config/user-dirs.dirs 2>/dev/null | sed 's#"##g')
+export icon_file="$desktop_path/Conv2XviD.desktop"
+
+if [[ ( -d "$desktop_path" ) && ( ! -r "$icon_file" ) ]]; then
+    exit 0
+fi
+
+exit 2
+

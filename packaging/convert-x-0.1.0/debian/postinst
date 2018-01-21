@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. /lib/convert-x/setup 2>/dev/null
+if [ $? ]; then
+    cat <<EOF >> $icon_file
+[Desktop Entry]
+Name=Conv2XviD
+Exec=/usr/bin/conv2xvid
+Icon=/etc/convert-x/XviD.ico
+Terminal=false
+Type=Application
+EOF
+    chown $SUDO_USER $icon_file
+fi
+
+#DEBHELPER#
