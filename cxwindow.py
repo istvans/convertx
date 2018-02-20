@@ -167,6 +167,10 @@ class ReadOnlyEntry(tk.Entry):
         if self.__change_cb is not None:
             self.__change_cb(self.name)
 
+    def set_path(self, path=None):
+        self.set_text(path)
+        self.translate = False
+
 ###############################################################################
 
 class Update:
@@ -287,7 +291,6 @@ class Window:
             self.__statee.set_text(self.__lang.text(key))
             self.__statee.name = key
 
-
     def __close(self):
         self.__window.event_generate(self.__close_event, when="tail")
     
@@ -318,8 +321,7 @@ class Window:
                 , width=self.__entry_width)
         d = self.__cfg.get("dir")
         if d is not None:
-            self.__dire.set_text(d)
-            self.__dire.translate = False
+            self.__dire.set_path(d)
         self.__dirb = tk.Button(self.__main
                 , text=self.__lang.text("dirb"), command=self.__select_dir)
         self.__dirb.name = "dirb"
@@ -329,9 +331,14 @@ class Window:
         self.__opene = ReadOnlyEntry(self.__main
                 , text=self.__lang.text(self.__input[0])
                 , name=self.__input[0], change_cb=self.__io_set)
-        self.__openb = tk.Button(self.__main
+        self.__open_buttons = tk.Frame(self.__main)
+        self.__openb = tk.Button(self.__open_buttons
                 , text=self.__lang.text("openb"), command=self.__open_input)
         self.__openb.name = "openb"
+        self.__open_settingsb = tk.Button(self.__open_buttons
+                , text=self.__lang.text("open_settingsb")
+                , command=self.__open_settings, state=tk.DISABLED)
+        self.__open_settingsb.name = "open_settingsb"
         
         self.__savel = tk.Label(self.__main, text=self.__lang.text("savel"))
         self.__savel.name = "savel"
@@ -385,7 +392,9 @@ class Window:
         self.__dirb.grid(sticky="w")
         self.__openl.grid(sticky="w")
         self.__opene.grid(sticky="ew")
-        self.__openb.grid(sticky="w")
+        self.__open_buttons.grid(sticky="w")
+        self.__openb.grid(sticky="w", row=0, column=0)
+        self.__open_settingsb.grid(sticky="w", row=0, column=1, padx=(5, 0))
         self.__savel.grid(sticky="w")
         self.__savee.grid(sticky="ew")
         self.__save_buttons.grid(sticky="w")
@@ -430,24 +439,24 @@ class Window:
         for c in w.children.values():
             self.__rephrase(c)
 
-    def __io_set(self, *args):
+    def __io_set(self, name, *args):
         if self.__saveb is None:
             return
         
-        if self.__input[0] == args[0]:
+        if self.__input[0] == name:
             self.__input[1] = True
-        if self.__output[0] == args[0]:
-            self.__output[1] = True
+        #if self.__output[0] == name:
+        #    self.__output[1] = True
 
         if self.__input[1]:
             self.__saveb["state"] = tk.NORMAL
         else:
             self.__saveb["state"] = tk.DISABLED
 
-        if self.__input[1] and self.__output[1]:
-            self.__startb["state"] = tk.NORMAL
-        else:
-            self.__startb["state"] = tk.DISABLED
+        #if self.__input[1] and self.__output[1]:
+        #    self.__startb["state"] = tk.NORMAL
+        #else:
+        #    self.__startb["state"] = tk.DISABLED
     
     def __load_logo(self):
         logo_path = self.__cfg.get("logo")
@@ -471,8 +480,7 @@ class Window:
         else:
             d = tk.filedialog.askdirectory()
         if d:
-            self.__dire.set_text(d)
-            self.__dire.translate = False
+            self.__dire.set_path(d)
             self.__app_q.put(Msg(Type.SET_CFG, "dir", d))
 
     def __open_input(self):
@@ -482,16 +490,17 @@ class Window:
         else:
             inp = tk.filedialog.askopenfilename()
         if inp:
-            self.__opene.set_text(inp)
-            self.__opene.translate = False
+            self.__opene.set_path(inp)
             self.__app_q.put(Msg(Type.INPUT_FILE, inp))
+
+    def __open_settings(self):
+        pass
 
     def __save_output(self):
         out = tk.filedialog.asksaveasfile(defaultextension=".avi"
                 , filetypes=[(self.__lang.text("file-types"), "*.avi")])
         if out:
-            self.__savee.set_text(out.name)
-            self.__savee.translate = False
+            self.__savee.set_path(out.name)
             self.__app_q.put(Msg(Type.OUTPUT_FILE, out.name))
     
     def __save_delete(self):
@@ -550,4 +559,3 @@ class Window:
 
     def __update(self):
         print("TODO: update")
-        pass

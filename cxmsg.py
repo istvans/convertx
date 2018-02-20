@@ -26,6 +26,7 @@ class Type(Enum):
     DELETE = auto()
     SET_CFG = auto()
     INPUT_FILE = auto()
+    OPENED = auto()
     OUTPUT_FILE = auto()
     FINISHED = auto()
     UPDATE_CHECK = auto()

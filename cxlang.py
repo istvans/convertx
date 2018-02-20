@@ -37,7 +37,7 @@ class Lang:
                 , "The new file's delition"],
             "del-target-msg" : ["Biztos, hogy törölni szeretnéd?"
                 , "Are you sure you want to delete?"],
-            "prep" : ["Előkészítés...", "Preparation..."],
+            "opening" : ["Megnyitás...", "Opening..."],
             "file-types" : ["avi file-ok", "avi files"],
             "dirl" : [
                 "Az alapértelmezett mappa (ha a megadott elérési út elérhető):"
@@ -51,6 +51,7 @@ class Lang:
             "opene" : ["Itt jelenik majd meg az eredeti file elérési útvonala."
                 , "The original file's path is going to be displayed here."],
             "openb" : ["Megnyitás", "Open"],
+            "open_settingsb" : ["Beállítások", "Settings"],
             "savel" : ["Az új file, amire konvertálni fogunk:"
                 , "The new file, the target of our conversion:"],
             "savee" : ["Itt jelenik majd meg az új file elérési útvonala."

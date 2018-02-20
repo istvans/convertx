@@ -32,18 +32,25 @@ def create_video_parser(input_file):
 
 ###############################################################################
 
-def create_converter(input_file, mappings, output_file):
-    """ Create converter sub-process """
-    
+def create_mapping(streams):
+    mapping = []
+    for stream in streams:
+        mapping.extend(["-map", "0:{}".format(stream)])
+    return mapping
 
+###############################################################################
+
+def create_converter(input_file, optional_streams, output_file):
+    """ Create converter sub-process """
     return subprocess.Popen(["ffmpeg"
         # input file options:
         # input file:
         , "-i", input_file
         # output file options:
         , "-map", "0:v", "-vcodec", "libxvid", "-q:v", "0"
-        , "-acodec", "libmp3lame", "-q:a", "0", "-b:a", "128k", "-ac", "2"
-        , "-y"
+        , "-acodec", "libmp3lame", "-q:a", "0", "-b:a", "128k", "-ac", "2"] +
+        create_mapping(optional_streams) +
+        ["-y"
         # output file:
         , output_file]
         , stdout=subprocess.PIPE, stderr=subprocess.STDOUT
