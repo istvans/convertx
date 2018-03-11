@@ -21,6 +21,7 @@ class Lang:
         self.supp_langs = ["Magyar", "English"]
         self.__texts = {
             "version" : "v1.0.0",
+            "lang-title" : "Select Language",
             "title" : ["Conv2XviD - Konvertálás XviD formátumra ({})"
                 , "Conv2XviD - Conversion to XviD format ({})"],
             "conv" : ["Konvertálás...", "Conversion..."],
@@ -39,6 +40,8 @@ class Lang:
                 , "Are you sure you want to delete?"],
             "opening" : ["Megnyitás...", "Opening..."],
             "file-types" : ["avi file-ok", "avi files"],
+            "config-title" : ["Konfiguráció", "Configuration"],
+            "update-title" : ["Frissítés keresése...", "Searching update..."],
             "dirl" : [
                 "Az alapértelmezett mappa (ha a megadott elérési út elérhető):"
                 , "The default directory (if the specified path is reachable):"
@@ -65,6 +68,13 @@ class Lang:
                 , "The estimated remaining time:"],
             "menu-lang" : ["Nyelv", "Language"],
             "menu-update" : ["Frissítés", "Update"],
+            "AUDIO" : ["Hang", "Audio"],
+            "SUBTITLE" : ["Felirat", "Subtitle"],
+            "VIDEO" : ["Videó", "Video"],
+            "no-streams" : ["Az adatfolyamok beolvasása nem sikerült."
+                    " Minden adatfolyam ki lesz választva!"
+                    , "Failed to read data streams. All streams are selected!"],
             "warn-unknown-remaining-time" : ["A hátralévő idő ismeretlen!"
-                , "The remaining time is unknown!"]
+                , "The remaining time is unknown!"],
+            "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"]
         }

@@ -2,36 +2,39 @@
 import sys
 sys.path.append("/lib/convert-x")
 
+from abc import ABC
 from cxlang import Lang
 from cxmsg import Msg, Type
-from cxutils import eprint
+from cxstream import StreamType
+from cxutils import eprint, AutoNumber
 from PIL import Image, ImageTk
-from queue import Empty
+from queue import Empty, Queue
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 import threading as th
 
 ###############################################################################
+    
+def setup_window(window, title, cfg, close_cb):
+    window.title(title)
+    window.bind("<<Close>>", close_cb)
+    window.protocol("WM_DELETE_WINDOW", close_cb)
+    window.resizable(0, 0)
+    set_window_icon(window, cfg)
 
-def set_window_icon(win, cfg):
+###############################################################################
+
+def set_window_icon(window, cfg):
     icon_path = cfg.get("icon")
     if icon_path is not None:
         try:
             img = ImageTk.PhotoImage(file=icon_path)
-            # win._w is where the image is stored! It is freed up otherwise
-            win.tk.call('wm', 'iconphoto', win._w, img)
+            # window._w is where the image is stored! It is freed up otherwise
+            window.tk.call('wm', 'iconphoto', window._w, img)
         except tk.TclError as e:
             eprint(e)
     else:
         eprint("no icon")
-
-###############################################################################
-
-def setup_window(win, title, closing_cb, cfg):
-    win.title(title)
-    win.protocol("WM_DELETE_WINDOW", closing_cb)
-    win.resizable(0, 0)
-    set_window_icon(win, cfg)
 
 ###############################################################################
 ###############################################################################
@@ -81,64 +84,153 @@ class Colors:
 
 ###############################################################################
 
-class LanguageSelector:
-    """ Language selector dialog window """
+class AbstractDialog(ABC):
+    """ Abstract dialog window base class """
     ### Public Methods ###
-    def __init__(self, cfg, lang, colors, parent=None):
-        self.__lang = lang
+    def __init__(self, parent, width, height, cfg, colors, lang
+            , title, single_lang_tile=False):
+        self.parent = parent
+        self.cfg = cfg
+        self.colors = colors
+        self.lang = lang
+        self.cancelled = False
         
         if parent is None:
-            self.__w = tk.Tk()
+            self.window = tk.Tk()
         else:
-            self.__w = tk.Toplevel(parent)
-            self.__w.transient(parent)
-            self.__w.grab_set()
+            self.window = tk.Toplevel(parent)
+            self.window.transient(parent)
+            self.window.grab_set()
         
-        setup_window(self.__w, "Select Language", self.__ok, cfg)
+        setup_window(self.window, self.lang.text(title, single_lang_tile)
+                , self.cfg, self.__cancel)
         
-        ws = self.__w.winfo_screenwidth()
-        w = int(ws * 0.2)
-        h = (len(self.__lang.supp_langs) * 12) + 32
-        if parent is None:
-            hs = self.__w.winfo_screenheight()
-            x = (ws/2) - (w/2)
-            y = (hs/2) - (h/2)
+        height += 32 # for the button line
+        if self.parent is None:
+            ws = self.window.winfo_screenwidth()
+            hs = self.window.winfo_screenheight()
+            x = (ws/2) - (width/2)
+            y = (hs/2) - (height/2)
         else:
-            x = parent.winfo_rootx() + parent.winfo_width()/2 - w/2
-            y = parent.winfo_rooty() + parent.winfo_height()/2 - h/2
-        self.__w.geometry("%dx%d+%d+%d" % (w, h, x, y))
-        
-        self.__radio_buttons = []
-        self.__selected = tk.IntVar()
-        self.__selected.set(0)
-        for i, l in enumerate(self.__lang.supp_langs):
-            rb = tk.Radiobutton(self.__w, text=l
-                    , variable=self.__selected, value=i
-                    , indicatoron=0)
-            rb.pack()
-            if self.__lang.selected is None:
-                if not self.__radio_buttons:
-                    rb.select()
-            elif self.__lang.selected == i:
-                rb.select()
-            self.__radio_buttons.append(rb)
-            
-        self.__button = tk.Button(self.__w, text="OK", command=self.__ok)
-        self.__button.pack()
+            x = self.parent.winfo_rootx() + self.parent.winfo_width()/2 - width/2
+            y = self.parent.winfo_rooty() + self.parent.winfo_height()/2 - height/2
+        self.window.geometry("%dx%d+%d+%d" % (width, height, x, y))
 
-        colors.set_widget(self.__w)
+        ####################
+        self.init_body()
+        ####################
+        
+        self.okb = tk.Button(self.window, text="OK", command=self.__ok)
+        self.okb.pack()
+        
+        self.colors.set_widget(self.window)
 
         if parent is None:
-            self.__w.mainloop()
+            self.window.mainloop()
         else:
-            parent.wait_window(self.__w)
+            self.parent.wait_window(self.window)
+
+    def init_body(self):
+        """ Override me to define your window elements. """
+        pass
+
+    def ok(self):
+        """ Override me to define your OK-logic. """
+        pass
+
+    def cancel(self):
+        """ Override me to define your cancel-logic. """
+        pass
     
     ### Private Methods ###
 
+    def __close_window(self):
+        self.window.withdraw()
+        self.window.destroy()
+
     def __ok(self):
-        self.__lang.selected = self.__selected.get()
-        self.__w.withdraw()
-        self.__w.destroy()
+        self.ok()
+        self.cancelled = False
+        self.__close_window()
+
+    def __cancel(self):
+        self.cancel()
+        self.cancelled = True
+        self.__close_window()
+
+###############################################################################
+
+class LanguageSelector(AbstractDialog):
+    """ Language selector dialog window """
+    ### Public Methods ###
+    def __init__(self, parent, cfg, colors, lang):
+        super().__init__(parent, 200, (len(lang.supp_langs) * 12), cfg, colors, lang
+                , "lang-title", single_lang_tile=True)
+
+    def init_body(self):
+        self.__radio_buttons = []
+        self.__selected = tk.IntVar()
+        self.__selected.set(0)
+        for i, l in enumerate(self.lang.supp_langs):
+            rb = tk.Radiobutton(self.window, text=l
+                    , variable=self.__selected, value=i
+                    , indicatoron=0)
+            rb.pack()
+            if self.lang.selected is None:
+                if not self.__radio_buttons:
+                    rb.select()
+            elif self.lang.selected == i:
+                rb.select()
+            self.__radio_buttons.append(rb)
+    
+    def ok(self):
+        self.__accept()
+
+    def cancel(self):
+        self.__accept()
+
+    def __accept(self):
+        self.lang.selected = self.__selected.get()
+
+###############################################################################
+
+class Update(AbstractDialog):
+    """ A window to help updating the application """
+    def __init__(self, parent, cfg, colors, lang):
+        super().__init__(parent, 200, 100, cfg, colors, lang
+                , "update-title")
+
+###############################################################################
+
+class Config(AbstractDialog):
+    """ Configuration dialog window """
+    ### Public Methods ###
+    def __init__(self, parent, cfg, colors, lang, streams):
+        self.__streams = streams
+        width = 200 if self.__streams.streams else 600
+        height = (len(self.__streams.streams) * 20) if self.__streams.streams else 24
+        super().__init__(parent, width, height, cfg, colors, lang
+                , "config-title")
+
+    def init_body(self):
+        self.__check_boxes = []
+        if not self.__streams.streams:
+            tk.Label(self.window, text=self.lang.text("no-streams")).pack()
+        else:
+            for i, s in enumerate(self.__streams.streams):
+                var = tk.IntVar()
+                cb = tk.Checkbutton(self.window, anchor="w"
+                        , text="{} {} {}".format(s.id, self.lang.text(s.type.name), s.lang)
+                        , variable=var, state=tk.DISABLED if s.type == StreamType.VIDEO else tk.NORMAL)
+                cb.selected = var
+                cb.selected.set(1 if s.enabled else 0)
+                cb.pack()
+                self.__check_boxes.append(cb)
+
+    def ok(self):
+        for i, cs in enumerate(self.__check_boxes):
+            self.__streams.streams[i].enabled = True if cs.selected.get() else False
+            print(cs.selected.get())
 
 ###############################################################################
 
@@ -173,15 +265,176 @@ class ReadOnlyEntry(tk.Entry):
 
 ###############################################################################
 
-class Update:
-    """ A window to help updating the application """
-    def __init__(self, parent, cfg, colors, lidx):
-        self.__parent = parent
-        self.__w = tk.Toplevel(self.__parent)
-        self.__w.transient(self.__parent)
-        self.__w.grab_set()
+class WindowEvent(AutoNumber):
+    RESET = ()
+    INPUT_PARSING = ()
+    INPUT_PARSED = ()
+    INPUT_PERMISSION_ERROR = ()
+    OUTPUT_AVAIL = ()
+    OUTPUT_PERMISSION_ERROR = ()
+    OUTPUT_DELETE = ()
+    START = ()
+    CONVERT = ()
+    STOP = ()
+    FINISH = ()
+
+class DisabledState:
+    def __init__(self):
+        self.reset_progress = False
+        self.menu = tk.DISABLED
+        self.dir = tk.DISABLED
+        self.openb = tk.DISABLED
+        self.open_settingsb = tk.DISABLED
+        self.saveb = tk.DISABLED
+        self.save_delb = tk.DISABLED
+        self.startb = tk.DISABLED
+        self.stopb = tk.DISABLED
+
+    def __eq__(self, other):
+        print("{} vs {}".format(type(self).__name__, type(other).__name__))
+        return type(self).__name__ == type(other).__name__
+
+class InitState(DisabledState):
+    def __init__(self):
+        super().__init__()
+        self.menu = tk.NORMAL
+        self.dir = tk.NORMAL
+        self.openb = tk.NORMAL
+
+class ProgressState(DisabledState, ABC):
+    def __init__(self):
+        super().__init__()
+        self.stopb = tk.NORMAL
+
+class OpeningState(ProgressState):
+    def __init__(self):
+        super().__init__()
+
+class InputAvailableState(InitState):
+    def __init__(self):
+        super().__init__()
+        self.open_settingsb = tk.NORMAL
+        self.saveb = tk.NORMAL
+
+class ReadyState(InputAvailableState):
+    def __init__(self):
+        super().__init__()
+        self.startb = tk.NORMAL
+
+class StartConversionState(ProgressState):
+    def __init__(self):
+        super().__init__()
+        self.reset_progress = True
+
+class ConversionState(ProgressState):
+    def __init__(self):
+        super().__init__()
+
+class FinishedState(ReadyState):
+    def __init__(self):
+        super().__init__()
+        self.save_delb = tk.NORMAL
+
+class WindowStateMachine:
+    ### Public Methods ###
+    def __init__(self, menu_items, menu, dirb, openb, open_settingsb, saveb
+            , save_delb, startb, stopb, progressbar, elapsede, lefte, set_state):
+        self.__menu_items = menu_items
+        self.__menu = menu
+        self.__dirb = dirb
+        self.__openb = openb
+        self.__open_settingsb = open_settingsb
+        self.__saveb = saveb
+        self.__save_delb = save_delb
+        self.__startb = startb
+        self.__stopb = stopb
+        self.__progressbar = progressbar
+        self.__elapsede = elapsede
+        self.__lefte = lefte
+        self.__set_state = set_state
+
+        self.__event_q = Queue()
+        self.__prev_state = DisabledState()
+        self.__state = DisabledState()
+        self.notify(WindowEvent.RESET)
         
-        setup_window(self.__w, "Select Language", self.__cancel, cfg)
+    def notify(self, event):
+        self.__event_q.put(event)
+    
+    def step(self):
+        """ Set window items according to the current state, if there was a state change """
+        if self.__state_changed():
+            print("hoho, state changed")
+            if self.__state.reset_progress:
+                print("progress reset")
+                pb_value = self.__progressbar["value"]
+                if pb_value > 0:
+                    self.__progressbar.step(amount=(-1 * pb_value))
+                    self.__elapsede.set_text()
+                    self.__lefte.set_text()
+            for i in range(len(self.__menu_items)):
+                self.__menu.entryconfigure((i+1), state=self.__state.menu)
+            self.__dirb["state"] = self.__state.dir
+            self.__openb["state"] = self.__state.openb
+            self.__open_settingsb["state"] = self.__state.open_settingsb
+            self.__saveb["state"] = self.__state.saveb
+            self.__save_delb["state"] = self.__state.save_delb
+            self.__startb["state"] = self.__state.startb
+            self.__stopb["state"] = self.__state.stopb
+    
+    ### Private Methods ###
+    
+    def __state_changed(self):
+        try:
+            event = self.__event_q.get(block=False)
+            self.__prev_state = self.__state
+            self.__evaluate(event)
+            return self.__prev_state != self.__state
+        except Empty:
+            return False
+
+    def __evaluate(self, event):
+        if event == WindowEvent.RESET:
+            self.__state = InitState()
+            self.__set_state()
+        elif event == WindowEvent.INPUT_PARSING:
+            self.__state = OpeningState()
+            self.__set_state("opening")
+        elif event == WindowEvent.INPUT_PERMISSION_ERROR:
+            self.__state = InitState()
+            self.__set_state("warn-permission")
+        elif event == WindowEvent.INPUT_PARSED:
+            self.__state = InputAvailableState()
+            self.__set_state()
+        elif event == WindowEvent.OUTPUT_PERMISSION_ERROR:
+            self.__state = InputAvailableState()
+            self.__set_state("warn-permission")
+        elif event == WindowEvent.OUTPUT_AVAIL:
+            self.__state = ReadyState()
+            self.__set_state()
+        elif event == WindowEvent.START:
+            self.__state = StartConversionState()
+            self.__set_state("conv")
+            self.notify(WindowEvent.CONVERT)
+        elif event == WindowEvent.CONVERT:
+            self.__state = ConversionState()
+            self.__set_state("conv")
+        elif event == WindowEvent.STOP:
+            if self.__prev_state == OpeningState():
+                self.__state = InitState()
+            elif self.__prev_state == ConversionState() or self.__prev_state == StartConversionState():
+                self.__state = FinishedState()
+            else:
+                raise RuntimeError("Unexpected event!")
+            self.__set_state("stopped")
+        elif event == WindowEvent.FINISH:
+            self.__state = FinishedState()
+            self.__set_state("finished")
+        elif event == WindowEvent.OUTPUT_DELETE:
+            self.__state = ReadyState()
+            self.__set_state()
+        else:
+            raise RuntimeError("Unknown event!")
 
 ###############################################################################
 
@@ -218,35 +471,35 @@ class Window:
 
     def __loop(self):
         self.__window = tk.Tk()
-        self.__close_event = "<<Close>>"
-        self.__window.bind(self.__close_event, self.__on_closing)
         self.__main = tk.Frame(self.__window)
 
-        setup_window(self.__window, self.__gen_title(), self.__on_closing
-                , self.__cfg)
+        setup_window(self.__window, self.__gen_title(), self.__cfg
+                , self.__on_closing)
         self.__set_geometry()
         
-        self.__input = ["opene", False]
-        self.__output = ["savee", False]
-        self.__saveb = None
-
         self.__create_widgets()
         self.__order_widgets()
         self.__colors.set_widget(self.__window)
+
+        self.__state_machine = WindowStateMachine(self.__menu_items, self.__menu
+                , self.__dirb, self.__openb, self.__open_settingsb
+                , self.__saveb, self.__save_delb, self.__startb, self.__stopb
+                , self.__progressbar, self.__elapsede, self.__lefte
+                , self.__set_state)
         
         while self.__window_q_processor():
+            self.__state_machine.step()
             self.__window.update_idletasks()
             self.__window.update()
 
     def __window_q_processor(self):
-        """ Process one message from the queue """
+        """ Process one message from the window queue """
         run = True
         try:
             msg = self.__window_q.get(block=False)
-            if msg.type == Type.PREP:
-                self.__set_state("prep")
-            elif msg.type == Type.CONV:
-                self.__set_state("conv")
+            if msg.type == Type.OPENED:
+                self.__streams = msg.data[0]
+                self.__state_machine.notify(WindowEvent.INPUT_PARSED)
             elif msg.type == Type.STEP:
                 self.__progressbar.step(msg.data[0])
             elif msg.type == Type.ELAPSED:
@@ -254,21 +507,25 @@ class Window:
             elif msg.type == Type.LEFT:
                 self.__lefte.set_text(msg.data[0])
             elif msg.type == Type.STOP_ACK:
-                self.__stopped(forced=True)
+                self.__state_machine.notify(WindowEvent.STOP)
             elif msg.type == Type.CLOSE_ACK:
                 run = False
             elif msg.type == Type.FINISHED:
-                self.__stopped()
+                self.__state_machine.notify(WindowEvent.FINISH)
             elif msg.type == Type.WARN_UNKNOWN_REMAINING_TIME:
                 self.__set_state("warn-unknown-remaining-time")
+            elif msg.type == Type.WARN_PERMISSION_ERROR:
+                self.__state_machine.notify(WindowEvent.INPUT_PERMISSION_ERROR)
+            else:
+                raise RuntimeError("Unknown message type!")
         except Empty:
             pass
         return run
     
     def __select_language(self):
         prev_selected = self.__lang.selected
-        ls = LanguageSelector(self.__cfg, self.__lang, self.__colors
-                , self.__window)
+        LanguageSelector(self.__window, self.__cfg, self.__colors
+                , self.__lang)
         if self.__lang.selected is None:
             raise RuntimeError("INTERNAL ERROR: lidx is None!")
         self.__app_q.put(Msg(Type.SET_CFG, "lang", self.__lang.selected))
@@ -286,10 +543,14 @@ class Window:
         self.__window.geometry("%dx%d+%d+%d" % (w, h, x, y))
         self.__entry_width = int(w * (90/736))
     
-    def __set_state(self, key):
+    def __set_state(self, key=None):
         if self.__statee is not None:
-            self.__statee.set_text(self.__lang.text(key))
-            self.__statee.name = key
+            if key is None:
+                self.__statee.set_text()
+                self.__statee.name = None
+            else:
+                self.__statee.set_text(self.__lang.text(key))
+                self.__statee.name = key
 
     def __close(self):
         self.__window.event_generate(self.__close_event, when="tail")
@@ -329,30 +590,28 @@ class Window:
         self.__openl = tk.Label(self.__main, text=self.__lang.text("openl"))
         self.__openl.name = "openl"
         self.__opene = ReadOnlyEntry(self.__main
-                , text=self.__lang.text(self.__input[0])
-                , name=self.__input[0], change_cb=self.__io_set)
+                , text=self.__lang.text("opene")
+                , name="opene")
         self.__open_buttons = tk.Frame(self.__main)
         self.__openb = tk.Button(self.__open_buttons
                 , text=self.__lang.text("openb"), command=self.__open_input)
         self.__openb.name = "openb"
         self.__open_settingsb = tk.Button(self.__open_buttons
                 , text=self.__lang.text("open_settingsb")
-                , command=self.__open_settings, state=tk.DISABLED)
+                , command=self.__open_settings)
         self.__open_settingsb.name = "open_settingsb"
         
         self.__savel = tk.Label(self.__main, text=self.__lang.text("savel"))
         self.__savel.name = "savel"
         self.__savee = ReadOnlyEntry(self.__main
-                , text=self.__lang.text(self.__output[0])
-                , name=self.__output[0], change_cb=self.__io_set)
+                , text=self.__lang.text("savee")
+                , name="savee")
         self.__save_buttons = tk.Frame(self.__main)
         self.__saveb = tk.Button(self.__save_buttons
-                , text=self.__lang.text("saveb"), command=self.__save_output
-                , state=tk.DISABLED)
+                , text=self.__lang.text("saveb"), command=self.__save_output)
         self.__saveb.name = "saveb"
         self.__save_delb = tk.Button(self.__save_buttons
-                , text=self.__lang.text("save-delb"), command=self.__save_delete
-                , state=tk.DISABLED)
+                , text=self.__lang.text("save-delb"), command=self.__save_delete)
         self.__save_delb.name = "save-delb"
 
         self.__command_separator_north = tk.ttk.Separator(self.__main
@@ -360,12 +619,10 @@ class Window:
 
         self.__command_buttons = tk.Frame(self.__main)
         self.__startb = tk.Button(self.__command_buttons
-                , text=self.__lang.text("startb"), command=self.__start
-                , state=tk.DISABLED)
+                , text=self.__lang.text("startb"), command=self.__start)
         self.__startb.name = "startb"
         self.__stopb = tk.Button(self.__command_buttons
-                , text=self.__lang.text("stopb"), command=self.__stop
-                , state=tk.DISABLED)
+                , text=self.__lang.text("stopb"), command=self.__stop)
         self.__stopb.name = "stopb"
         
         self.__command_separator_south = tk.ttk.Separator(self.__main
@@ -439,25 +696,6 @@ class Window:
         for c in w.children.values():
             self.__rephrase(c)
 
-    def __io_set(self, name, *args):
-        if self.__saveb is None:
-            return
-        
-        if self.__input[0] == name:
-            self.__input[1] = True
-        #if self.__output[0] == name:
-        #    self.__output[1] = True
-
-        if self.__input[1]:
-            self.__saveb["state"] = tk.NORMAL
-        else:
-            self.__saveb["state"] = tk.DISABLED
-
-        #if self.__input[1] and self.__output[1]:
-        #    self.__startb["state"] = tk.NORMAL
-        #else:
-        #    self.__startb["state"] = tk.DISABLED
-    
     def __load_logo(self):
         logo_path = self.__cfg.get("logo")
         try:
@@ -492,16 +730,24 @@ class Window:
         if inp:
             self.__opene.set_path(inp)
             self.__app_q.put(Msg(Type.INPUT_FILE, inp))
+            self.__state_machine.notify(WindowEvent.INPUT_PARSING)
 
     def __open_settings(self):
-        pass
+        Config(self.__window, self.__cfg, self.__colors, self.__lang
+                , self.__streams)
 
     def __save_output(self):
-        out = tk.filedialog.asksaveasfile(defaultextension=".avi"
-                , filetypes=[(self.__lang.text("file-types"), "*.avi")])
-        if out:
-            self.__savee.set_path(out.name)
-            self.__app_q.put(Msg(Type.OUTPUT_FILE, out.name))
+        try:
+            out = tk.filedialog.asksaveasfile(defaultextension=".avi"
+                    , filetypes=[(self.__lang.text("file-types"), "*.avi")])
+            if out:
+                self.__savee.set_path(out.name)
+                self.__app_q.put(Msg(Type.OUTPUT_FILE, out.name))
+                self.__state_machine.notify(WindowEvent.OUTPUT_AVAIL)
+        except IOError as err:
+            eprint(err)
+            self.__savee.set_path()
+            self.__state_machine.notify(WindowEvent.OUTPUT_PERMISSION_ERROR)
     
     def __save_delete(self):
         save_file = self.__savee.get_text()
@@ -509,11 +755,11 @@ class Window:
                 self.__lang.text("del-target-title")
                 , self.__lang.text("del-target-msg")):
             self.__app_q.put(Msg(Type.DELETE, save_file))
-            self.__save_delb["state"] = tk.DISABLED
+            self.__state_machine.notify(WindowEvent.OUTPUT_DELETE)
     
     def __start(self):
-        self.__started()
-        self.__app_q.put(Msg(Type.START))
+        self.__app_q.put(Msg(Type.START, self.__streams))
+        self.__state_machine.notify(WindowEvent.START)
     
     def __stop(self, stay_alive=True):
         if stay_alive and not messagebox.askyesno(self.__lang.text("stop-title")
@@ -524,38 +770,9 @@ class Window:
         else:
             self.__app_q.put(Msg(Type.CLOSE))
 
-    def __started(self):
-        pb_value = self.__progressbar["value"]
-        if pb_value > 0:
-            self.__progressbar.step(amount=(-1 * pb_value))
-            self.__elapsede.set_text()
-            self.__lefte.set_text()
-        for i in range(len(self.__menu_items)):
-            self.__menu.entryconfigure((i+1), state=tk.DISABLED)
-        self.__dirb["state"] = tk.DISABLED
-        self.__openb["state"] = tk.DISABLED
-        self.__saveb["state"] = tk.DISABLED
-        self.__save_delb["state"] = tk.DISABLED
-        self.__startb["state"] = tk.DISABLED
-        self.__stopb["state"] = tk.NORMAL
-    
-    def __stopped(self, forced=False):
-        if forced:
-            self.__set_state("stopped")
-        else:
-            self.__set_state("finished")
-        for i in range(len(self.__menu_items)):
-            self.__menu.entryconfigure((i+1), state=tk.NORMAL)
-        self.__dirb["state"] = tk.NORMAL
-        self.__openb["state"] = tk.NORMAL
-        self.__saveb["state"] = tk.NORMAL
-        self.__save_delb["state"] = tk.NORMAL
-        self.__startb["state"] = tk.NORMAL
-        self.__stopb["state"] = tk.DISABLED
-    
     def __gen_title(self):
         return self.__lang.text("title").format(
                 self.__lang.text("version", single=True))
 
     def __update(self):
-        print("TODO: update")
+        Update(self.__window, self.__cfg, self.__colors, self.__lang)

@@ -6,6 +6,7 @@ sys.path.append("/lib/convert-x")
 import cxcfg as cfg
 from cxmsg import Msg, Type
 import cxproc as cxp
+from cxstream import Stream, Streams, StreamType
 from cxutils import eprint
 import cxwindow as cx
 import os
@@ -30,6 +31,8 @@ class InfoGetter:
         self.__input_file = None
         self.num_of_frames = None
         self.one_percent = None
+        self.streams = Streams()
+        self.permission_error = False
 
     def __bool__(self):
         return self.num_of_frames is not None and self.one_percent is not None
@@ -47,7 +50,6 @@ class InfoGetter:
         self.__input_file = input_file
         self.__finished = False
         self.__cancelled = False
-        self.__window_q.put(Msg(Type.PREP))
            
         if self.__video_parser_proc is None:
             self.__video_parser_proc = cxp.create_video_parser(input_file)
@@ -69,9 +71,21 @@ class InfoGetter:
     ### Private Methods ###
         
     def __gather(self):
+        self.permission_error = False
+        self.streams.reset()
         last_match = None
         for line in iter(self.__video_parser_proc.stdout.readline, ""):
             l = line.rstrip()
+            
+            if re.search("Permission denied", l):
+                self.permission_error = True
+                break
+            
+            match = re.search("^\s*Stream #(\d+:\d+)\(([^:]+)\):\s*([^:]+)", l)
+            if match:
+                print("'{}''{}''{}'".format(match.group(1), match.group(2), match.group(3)))
+                self.streams.add(Stream(stream_id=match.group(1), lang=match.group(2), stream_type=match.group(3)))
+            
             match = re.search("^\s*frame=\s*(\d+)", l)
             if match:
                 last_match = match
@@ -93,6 +107,9 @@ class InfoGetter:
         if self.num_of_frames is None:
             self.__window_q.put(Msg(Type.WARN_UNKNOWN_REMAINING_TIME))
 
+        if self.permission_error:
+            self.__window_q.put(Msg(Type.WARN_PERMISSION_ERROR))
+
         self.__finish()
 
     def __finish(self):
@@ -110,7 +127,8 @@ class Application:
         self.__app_q = Queue()
         self.__window = cx.Window(window_queue=self.__window_q
                 , app_queue=self.__app_q, cfg=self.__cfg)
-        self.__input_info = InfoGetter(window_queue=self.__window_q)
+        self.__input_info = InfoGetter(window_queue=self.__window_q
+                , finished_cb=self.__input_file_opened)
         self.__progress_thread = None
         self.__converter_proc = None 
         
@@ -124,7 +142,7 @@ class Application:
         """ Process one message from the queue """
         msg = self.__app_q.get(block=True)
         if msg.type == Type.START:
-            self.__start_conversion(msg.data)
+            self.__start_conversion(msg.data[0])
         elif msg.type == Type.STOP:
             self.__stop(stay_alive=True)
         elif msg.type == Type.CLOSE:
@@ -150,18 +168,17 @@ class Application:
             self.__window_q.put(Msg(Type.CLOSE_ACK))
             self.__run = False
 
-    def __start_conversion(self, optional_streams):
+    def __start_conversion(self, streams):
         if self.__input_file is None:
             raise RuntimeError("INTERNAL ERROR: input file should have "
                     "been already received!")
         if self.__output_file is None:
             raise RuntimeError("INTERNAL ERROR: output file should have "
                     "been already received!")
-        self.__window_q.put(Msg(Type.CONV))
        
         if self.__converter_proc is None:
             self.__converter_proc = cxp.create_converter(self.__input_file
-                , optional_streams, self.__output_file)
+                , streams, self.__output_file)
     
         if self.__progress_thread is None:
             self.__progress_thread = th.Thread(target=self.__progress)
@@ -177,6 +194,7 @@ class Application:
         progress = 0.0
         frame = 0
         for line in iter(self.__converter_proc.stdout.readline, ""):
+            print(line.rstrip())
             if self.__input_info:
                 match = re.search("frame=\s*(\d+)", line)
                 if match:
@@ -206,6 +224,10 @@ class Application:
         # to allow restart
         self.__converter_proc = None
         self.__progress_thread = None
+
+    def __input_file_opened(self):
+        if not self.__input_info.permission_error:
+            self.__window_q.put(Msg(Type.OPENED, self.__input_info.streams))
 
     def __remove_file(self, file_path):
         try:

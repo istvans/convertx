@@ -1,39 +1,33 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from enum import Enum
-# auto is not available... :/
+import sys
+sys.path.append("/lib/convert-x")
+
+from cxutils import AutoNumber
 
 ###############################################################################
 
-def auto():
-    auto.__counter += 1
-    return auto.__counter
-auto.__counter = 0
-
-###############################################################################
-
-class Type(Enum):
-    PREP = auto()
-    START = auto()
-    STOP = auto()
-    STOP_ACK = auto()
-    CLOSE = auto()
-    CLOSE_ACK = auto()
-    CONV = auto()
-    STEP = auto()
-    ELAPSED = auto()
-    LEFT = auto()
-    DELETE = auto()
-    SET_CFG = auto()
-    INPUT_FILE = auto()
-    OPENED = auto()
-    OUTPUT_FILE = auto()
-    FINISHED = auto()
-    UPDATE_CHECK = auto()
-    UPDATE_AVAIL = auto()
-    UPDATE_START = auto()
-    UPDATE_FINISHED = auto()
-    WARN_UNKNOWN_REMAINING_TIME = auto()
+class Type(AutoNumber):
+    START = ()
+    STOP = ()
+    STOP_ACK = ()
+    CLOSE = ()
+    CLOSE_ACK = ()
+    STEP = ()
+    ELAPSED = ()
+    LEFT = ()
+    DELETE = ()
+    SET_CFG = ()
+    INPUT_FILE = ()
+    OPENED = ()
+    OUTPUT_FILE = ()
+    FINISHED = ()
+    UPDATE_CHECK = ()
+    UPDATE_AVAIL = ()
+    UPDATE_START = ()
+    UPDATE_FINISHED = ()
+    WARN_UNKNOWN_REMAINING_TIME = ()
+    WARN_PERMISSION_ERROR = ()
 
 class Msg:
     def __init__(self, msg_type, *data):

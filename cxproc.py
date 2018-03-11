@@ -32,27 +32,24 @@ def create_video_parser(input_file):
 
 ###############################################################################
 
-def create_mapping(streams):
-    mapping = []
-    for stream in streams:
-        mapping.extend(["-map", "0:{}".format(stream)])
-    return mapping
-
-###############################################################################
-
-def create_converter(input_file, optional_streams, output_file):
+def create_converter(input_file, streams, output_file):
     """ Create converter sub-process """
-    return subprocess.Popen(["ffmpeg"
-        # input file options:
-        # input file:
-        , "-i", input_file
-        # output file options:
-        , "-map", "0:v", "-vcodec", "libxvid", "-q:v", "0"
-        , "-acodec", "libmp3lame", "-q:a", "0", "-b:a", "128k", "-ac", "2"] +
-        create_mapping(optional_streams) +
-        ["-y"
-        # output file:
-        , output_file]
+    converter_command = ("ffmpeg"
+            # input file options:
+            # input file:
+            " -i {}"
+            # output file options:
+            " -c copy"
+            " -c:s srt"
+            " -c:v libxvid -q:v 0"
+            " -c:a libmp3lame -q:a 0 -b:a 128k -ac 2"
+            "{}"
+            " -y"
+            # output file:
+            " {}").format(input_file, streams.get_ffmpeg_mapping(), output_file)
+    print("The converter command: '{}'".format(converter_command))
+
+    return subprocess.Popen(converter_command.split()
         , stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         , universal_newlines=True)
 
