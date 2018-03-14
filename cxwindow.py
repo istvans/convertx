@@ -274,7 +274,6 @@ class WindowEvent(AutoNumber):
     OUTPUT_PERMISSION_ERROR = ()
     OUTPUT_DELETE = ()
     START = ()
-    CONVERT = ()
     STOP = ()
     FINISH = ()
 
@@ -320,20 +319,22 @@ class ReadyState(InputAvailableState):
     def __init__(self):
         super().__init__()
         self.startb = tk.NORMAL
-
-class StartConversionState(ProgressState):
-    def __init__(self):
-        super().__init__()
+        self.save_delb = tk.NORMAL
         self.reset_progress = True
 
 class ConversionState(ProgressState):
     def __init__(self):
         super().__init__()
 
+class OutputDeletedState(ReadyState):
+    def __init__(self):
+        super().__init__()
+        self.save_delb = tk.DISABLED
+
 class FinishedState(ReadyState):
     def __init__(self):
         super().__init__()
-        self.save_delb = tk.NORMAL
+        self.reset_progress = False
 
 class WindowStateMachine:
     ### Public Methods ###
@@ -413,16 +414,12 @@ class WindowStateMachine:
             self.__state = ReadyState()
             self.__set_state()
         elif event == WindowEvent.START:
-            self.__state = StartConversionState()
-            self.__set_state("conv")
-            self.notify(WindowEvent.CONVERT)
-        elif event == WindowEvent.CONVERT:
             self.__state = ConversionState()
             self.__set_state("conv")
         elif event == WindowEvent.STOP:
             if self.__prev_state == OpeningState():
                 self.__state = InitState()
-            elif self.__prev_state == ConversionState() or self.__prev_state == StartConversionState():
+            elif self.__prev_state == ConversionState():
                 self.__state = FinishedState()
             else:
                 raise RuntimeError("Unexpected event!")
@@ -431,7 +428,7 @@ class WindowStateMachine:
             self.__state = FinishedState()
             self.__set_state("finished")
         elif event == WindowEvent.OUTPUT_DELETE:
-            self.__state = ReadyState()
+            self.__state = OutputDeletedState()
             self.__set_state()
         else:
             raise RuntimeError("Unknown event!")
@@ -503,9 +500,9 @@ class Window:
             elif msg.type == Type.STEP:
                 self.__progressbar.step(msg.data[0])
             elif msg.type == Type.ELAPSED:
-                self.__elapsede.set_text(msg.data[0])
+                self.__elapsede.set_text(self.__sec2time(msg.data[0]))
             elif msg.type == Type.LEFT:
-                self.__lefte.set_text(msg.data[0])
+                self.__lefte.set_text(self.__sec2time(msg.data[0]))
             elif msg.type == Type.STOP_ACK:
                 self.__state_machine.notify(WindowEvent.STOP)
             elif msg.type == Type.CLOSE_ACK:
@@ -521,6 +518,11 @@ class Window:
         except Empty:
             pass
         return run
+    
+    def __sec2time(self, seconds):
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return "%d:%02d:%02d" % (h, m, s)
     
     def __select_language(self):
         prev_selected = self.__lang.selected
@@ -776,3 +778,4 @@ class Window:
 
     def __update(self):
         Update(self.__window, self.__cfg, self.__colors, self.__lang)
+    

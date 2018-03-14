@@ -6,116 +6,10 @@ sys.path.append("/lib/convert-x")
 import cxcfg as cfg
 from cxmsg import Msg, Type
 import cxproc as cxp
-from cxstream import Stream, Streams, StreamType
 from cxutils import eprint
 import cxwindow as cx
 import os
 from queue import Queue
-import re
-import subprocess
-import threading as th
-import time
-
-###############################################################################
-
-class InfoGetter:
-    ### Public Methods ###
-    def __init__(self, window_queue, finished_cb=None):
-        self.__window_q = window_queue
-        self.__finished_cb = finished_cb
-        self.__video_parser_proc = None
-        self.__gather_thread = None
-        self.__finished = False
-        self.__cancelled = False
-        self.__exiting = False
-        self.__input_file = None
-        self.num_of_frames = None
-        self.one_percent = None
-        self.streams = Streams()
-        self.permission_error = False
-
-    def __bool__(self):
-        return self.num_of_frames is not None and self.one_percent is not None
-
-    def start(self, input_file):
-        if input_file is None:
-            raise RuntimeError("INTERNAL ERROR: input file should have "
-                    "been already received!")
-        
-        if self.__finished and self.__input_file is not None \
-            and self.__input_file == input_file:
-            self.__finish()
-            return
-        
-        self.__input_file = input_file
-        self.__finished = False
-        self.__cancelled = False
-           
-        if self.__video_parser_proc is None:
-            self.__video_parser_proc = cxp.create_video_parser(input_file)
-        
-        if self.__gather_thread is None:
-            self.__gather_thread = th.Thread(target=self.__gather)
-            self.__gather_thread.start()
-    
-    def stop(self, exiting=False):
-        self.__exiting = exiting
-        self.__cancelled = True
-        cxp.terminate(process=self.__video_parser_proc)
-
-    def run(self, frame):
-        if not self:
-            return True
-        return frame < self.num_of_frames
-    
-    ### Private Methods ###
-        
-    def __gather(self):
-        self.permission_error = False
-        self.streams.reset()
-        last_match = None
-        for line in iter(self.__video_parser_proc.stdout.readline, ""):
-            l = line.rstrip()
-            
-            if re.search("Permission denied", l):
-                self.permission_error = True
-                break
-            
-            match = re.search("^\s*Stream #(\d+:\d+)\(([^:]+)\):\s*([^:]+)", l)
-            if match:
-                print("'{}''{}''{}'".format(match.group(1), match.group(2), match.group(3)))
-                self.streams.add(Stream(stream_id=match.group(1), lang=match.group(2), stream_type=match.group(3)))
-            
-            match = re.search("^\s*frame=\s*(\d+)", l)
-            if match:
-                last_match = match
-
-        if self.__exiting:
-            return
-       
-        # to allow restart
-        self.__video_parser_proc = None
-        self.__gather_thread = None
-        
-        if self.__cancelled:
-            return
-
-        if last_match:
-            self.num_of_frames = int(last_match.group(1))
-            self.one_percent = self.num_of_frames / 100
-
-        if self.num_of_frames is None:
-            self.__window_q.put(Msg(Type.WARN_UNKNOWN_REMAINING_TIME))
-
-        if self.permission_error:
-            self.__window_q.put(Msg(Type.WARN_PERMISSION_ERROR))
-
-        self.__finish()
-
-    def __finish(self):
-        self.__finished = True
-        if self.__finished_cb is not None:
-            self.__finished_cb()
 
 ###############################################################################
 
@@ -127,10 +21,11 @@ class Application:
         self.__app_q = Queue()
         self.__window = cx.Window(window_queue=self.__window_q
                 , app_queue=self.__app_q, cfg=self.__cfg)
-        self.__input_info = InfoGetter(window_queue=self.__window_q
-                , finished_cb=self.__input_file_opened)
-        self.__progress_thread = None
-        self.__converter_proc = None 
+        self.__input_file = None
+        self.__num_of_frames = None
+        self.__one_percent = None
+        self.__video_parser = None
+        self.__converter = None 
         
         self.__run = True
         while self.__run:
@@ -152,16 +47,39 @@ class Application:
         elif msg.type == Type.SET_CFG:
             self.__cfg.set(msg.data[0], msg.data[1])
         elif msg.type == Type.INPUT_FILE:
-            self.__input_file = msg.data[0]
-            self.__input_info.start(self.__input_file)
+            self.__parse_video(msg.data[0])
         elif msg.type == Type.OUTPUT_FILE:
             self.__output_file = msg.data[0]
+    
+    def __parse_video(self, input_file):
+        prev_input_file = self.__input_file
+        self.__input_file = input_file
+        if prev_input_file == self.__input_file and\
+                self.__video_parser is not None and self.__video_parser.finished:
+            self.__video_parsed()
+        else:
+            self.__video_parser = cxp.VideoParserCommand(self.__input_file
+                    , self.__video_parsed)
+            self.__num_of_frames = None
+            self.__one_percent = None
+            self.__video_parser.start()
+    
+    def __video_parsed(self):
+        if self.__video_parser.permission_error:
+            self.__window_q.put(Msg(Type.WARN_PERMISSION_ERROR))
+        elif self.__video_parser.num_of_frames is None:
+            self.__window_q.put(Msg(Type.WARN_UNKNOWN_REMAINING_TIME))
+
+        if not self.__video_parser.permission_error:
+            self.__num_of_frames = self.__video_parser.num_of_frames
+            self.__one_percent = self.__video_parser.one_percent
+            self.__window_q.put(Msg(Type.OPENED, self.__video_parser.streams))
 
     def __stop(self, stay_alive):
-        self.__input_info.stop(exiting=not stay_alive)
-
-        cxp.terminate(process=self.__converter_proc)
-
+        if self.__video_parser is not None:
+            self.__video_parser.stop()
+        if self.__converter is not None:
+            self.__converter.stop()
         if stay_alive:
             self.__window_q.put(Msg(Type.STOP_ACK))
         else:
@@ -175,70 +93,29 @@ class Application:
         if self.__output_file is None:
             raise RuntimeError("INTERNAL ERROR: output file should have "
                     "been already received!")
-       
-        if self.__converter_proc is None:
-            self.__converter_proc = cxp.create_converter(self.__input_file
-                , streams, self.__output_file)
+
+        self.__converter = cxp.ConverterCommand(self.__input_file, streams, self.__output_file
+                , self.__num_of_frames, self.__one_percent
+                , self.__conversion_step, self.__conversion_elapsed, self.__conversion_left, self.__conversion_finished)
+        self.__converter.start()
+
+    def __conversion_step(self, increment):
+        self.__window_q.put(Msg(Type.STEP, increment))
+
+    def __conversion_elapsed(self, elapsed_seconds):
+        self.__window_q.put(Msg(Type.ELAPSED, elapsed_seconds))
     
-        if self.__progress_thread is None:
-            self.__progress_thread = th.Thread(target=self.__progress)
-            self.__progress_thread.start()
+    def __conversion_left(self, left_seconds):
+        self.__window_q.put(Msg(Type.LEFT, left_seconds))
 
-    def __progress(self):
-        """ Monitor the progress of the conversion and report it to the
-        GUI thread
-        """
-        t = th.currentThread()
-        start = time.time()
-        percent = 0.0
-        progress = 0.0
-        frame = 0
-        for line in iter(self.__converter_proc.stdout.readline, ""):
-            print(line.rstrip())
-            if self.__input_info:
-                match = re.search("frame=\s*(\d+)", line)
-                if match:
-                    now = time.time()
-                    frame = int(match.group(1))
-                    if frame >= percent:
-                        percent = (frame / self.__input_info.one_percent)
-                        incr = percent - progress
-                        self.__window_q.put(Msg(Type.STEP, incr))
-                        progress += incr
-                        percent = frame + self.__input_info.one_percent
-
-                elapsed = time.time() - start
-                self.__window_q.put(Msg(Type.ELAPSED
-                    , self.__sec2time(elapsed)))
-              
-                if frame:
-                    needed_per_frame = elapsed / frame
-                    left = self.__input_info.num_of_frames - frame
-                    estimate = left * needed_per_frame
-                    self.__window_q.put(Msg(Type.LEFT
-                        , self.__sec2time(estimate)))
-
-        if frame == self.__input_info.num_of_frames:
-            self.__window_q.put(Msg(Type.FINISHED))
-        
-        # to allow restart
-        self.__converter_proc = None
-        self.__progress_thread = None
-
-    def __input_file_opened(self):
-        if not self.__input_info.permission_error:
-            self.__window_q.put(Msg(Type.OPENED, self.__input_info.streams))
+    def __conversion_finished(self):
+        self.__window_q.put(Msg(Type.FINISHED))
 
     def __remove_file(self, file_path):
         try:
             os.remove(file_path)
         except FileNotFoundError as e:
             eprint(e)
-
-    def __sec2time(self, seconds):
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        return "%d:%02d:%02d" % (h, m, s)
 
 ###############################################################################
 ###############################################################################
