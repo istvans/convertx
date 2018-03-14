@@ -62,7 +62,9 @@ class AbstractCommand(ABC):
     def __read_next_line(self):
         for raw_line in iter(self.process.stdout.readline, ""):
             elapsed = time.time() - self.start
-            if self.cancelled or not self.progress(raw_line.rstrip(), elapsed):
+            line = raw_line.rstrip()
+            print(line)
+            if self.cancelled or not self.progress(line, elapsed):
                 break
         self.process = None
         self.finish()
@@ -141,16 +143,19 @@ class ConverterCommand(AbstractCommand):
         self.__elapsed_cb = elapsed_cb
         self.__left_cb = left_cb
         self.__finished_cb = finished_cb
+        self.__last_line = None
+        self.failed = False
 
     def progress(self, line, elapsed_seconds):
         """ Monitor the progress of the conversion and report it """
+        self.__last_line = line
         if self.__num_of_frames is not None and self.__one_percent is not None\
                 and self.__step_cb is not None and self.__elapsed_cb is not None\
                 and self.__left_cb is not None:
             match = re.search("frame=\s*(\d+)", line)
             if match:
                 self.__frame = int(match.group(1))
-                if self.__frame >= percent:
+                if self.__frame >= self.__percent:
                     self.__percent = (self.__frame / self.__one_percent)
                     incr = self.__percent - self.__progress
                     self.__step_cb(incr)
@@ -161,11 +166,13 @@ class ConverterCommand(AbstractCommand):
             
             if self.__frame:
                 needed_per_frame = elapsed_seconds / self.__frame
-                left = self.__num_of_frames - self.__frame
-                estimate = left * needed_per_frame
-                self.__left_cb(estimate)
+                left_frames = self.__num_of_frames - self.__frame
+                estimated_left_time = left_frames * needed_per_frame
+                self.__left_cb(estimated_left_time)
         return True
 
     def finish(self):
-        if not self.cancelled and self.__finished_cb is not None:
-            self.__finished_cb()
+        if self.__finished_cb is not None:
+            self.failed = True if self.__last_line is None or\
+                    not re.search("^\s*video:", self.__last_line) else False
+            self.__finished_cb(self.cancelled, self.failed, self.__last_line)

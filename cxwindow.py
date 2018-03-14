@@ -275,10 +275,12 @@ class WindowEvent(AutoNumber):
     OUTPUT_DELETE = ()
     START = ()
     STOP = ()
+    ERROR = ()
     FINISH = ()
 
 class DisabledState:
     def __init__(self):
+        self.clear_error_msg = True
         self.reset_progress = False
         self.menu = tk.DISABLED
         self.dir = tk.DISABLED
@@ -336,6 +338,11 @@ class FinishedState(ReadyState):
         super().__init__()
         self.reset_progress = False
 
+class ConversionFailedState(ReadyState):
+    def __init__(self):
+        super().__init__()
+        self.clear_error_msg = False
+
 class WindowStateMachine:
     ### Public Methods ###
     def __init__(self, menu_items, menu, dirb, openb, open_settingsb, saveb
@@ -353,6 +360,8 @@ class WindowStateMachine:
         self.__elapsede = elapsede
         self.__lefte = lefte
         self.__set_state = set_state
+        
+        self.error_msg = None
 
         self.__event_q = Queue()
         self.__prev_state = DisabledState()
@@ -366,13 +375,15 @@ class WindowStateMachine:
         """ Set window items according to the current state, if there was a state change """
         if self.__state_changed():
             print("hoho, state changed")
+            if self.__state.clear_error_msg:
+                self.error_msg = None
             if self.__state.reset_progress:
                 print("progress reset")
                 pb_value = self.__progressbar["value"]
                 if pb_value > 0:
                     self.__progressbar.step(amount=(-1 * pb_value))
-                    self.__elapsede.set_text()
-                    self.__lefte.set_text()
+                self.__elapsede.set_text()
+                self.__lefte.set_text()
             for i in range(len(self.__menu_items)):
                 self.__menu.entryconfigure((i+1), state=self.__state.menu)
             self.__dirb["state"] = self.__state.dir
@@ -400,12 +411,17 @@ class WindowStateMachine:
             self.__set_state()
         elif event == WindowEvent.INPUT_PARSING:
             self.__state = OpeningState()
+            if isinstance(self.__prev_state, ReadyState):
+                self.__state.was_ready = True
             self.__set_state("opening")
         elif event == WindowEvent.INPUT_PERMISSION_ERROR:
             self.__state = InitState()
             self.__set_state("warn-permission")
         elif event == WindowEvent.INPUT_PARSED:
-            self.__state = InputAvailableState()
+            if hasattr(self.__prev_state, "was_ready"):
+                self.__state = ReadyState()
+            else:
+                self.__state = InputAvailableState()
             self.__set_state()
         elif event == WindowEvent.OUTPUT_PERMISSION_ERROR:
             self.__state = InputAvailableState()
@@ -424,6 +440,9 @@ class WindowStateMachine:
             else:
                 raise RuntimeError("Unexpected event!")
             self.__set_state("stopped")
+        elif event == WindowEvent.ERROR:
+            self.__state = ConversionFailedState()
+            self.__set_state("err-msg")
         elif event == WindowEvent.FINISH:
             self.__state = FinishedState()
             self.__set_state("finished")
@@ -507,6 +526,9 @@ class Window:
                 self.__state_machine.notify(WindowEvent.STOP)
             elif msg.type == Type.CLOSE_ACK:
                 run = False
+            elif msg.type == Type.FAILED:
+                self.__state_machine.notify(WindowEvent.ERROR)
+                self.__state_machine.error_msg = msg.data[0]
             elif msg.type == Type.FINISHED:
                 self.__state_machine.notify(WindowEvent.FINISH)
             elif msg.type == Type.WARN_UNKNOWN_REMAINING_TIME:
@@ -551,7 +573,10 @@ class Window:
                 self.__statee.set_text()
                 self.__statee.name = None
             else:
-                self.__statee.set_text(self.__lang.text(key))
+                if key == "err-msg":
+                    self.__statee.set_text(self.__gen_error_text())
+                else:
+                    self.__statee.set_text(self.__lang.text(key))
                 self.__statee.name = key
 
     def __close(self):
@@ -689,7 +714,11 @@ class Window:
             w.title(self.__gen_title())
         elif w.winfo_class() == "Entry" and w.name is not None \
                 and w.translate:
-            w.set_text(self.__lang.text(w.name))
+            if w.name == "err-msg":
+                print("found '{}'".format(w))
+                self.__set_state("err-msg")
+            else:
+                w.set_text(self.__lang.text(w.name))
         elif w.winfo_class() == "Menu":
             for i, mi in enumerate(self.__menu_items):
                 self.__menu.entryconfigure((i+1)
@@ -775,6 +804,15 @@ class Window:
     def __gen_title(self):
         return self.__lang.text("title").format(
                 self.__lang.text("version", single=True))
+
+    def __gen_error_text(self):
+        error_template = self.__lang.text("err-msg")
+        error_text = None
+        if self.__state_machine.error_msg is not None:
+            error_text = error_template.format(self.__state_machine.error_msg)
+        else:
+            error_text = error_template.format(self.__lang.text("unknown"))
+        return error_text
 
     def __update(self):
         Update(self.__window, self.__cfg, self.__colors, self.__lang)

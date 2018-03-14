@@ -21,6 +21,7 @@ class Type(AutoNumber):
     INPUT_FILE = ()
     OPENED = ()
     OUTPUT_FILE = ()
+    FAILED = ()
     FINISHED = ()
     UPDATE_CHECK = ()
     UPDATE_AVAIL = ()

@@ -108,8 +108,12 @@ class Application:
     def __conversion_left(self, left_seconds):
         self.__window_q.put(Msg(Type.LEFT, left_seconds))
 
-    def __conversion_finished(self):
-        self.__window_q.put(Msg(Type.FINISHED))
+    def __conversion_finished(self, cancelled, failed, err_msg):
+        if not cancelled:
+            if failed:
+                self.__window_q.put(Msg(Type.FAILED, err_msg))
+            else:
+                self.__window_q.put(Msg(Type.FINISHED))
 
     def __remove_file(self, file_path):
         try:

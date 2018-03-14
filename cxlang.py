@@ -24,6 +24,7 @@ class Lang:
             "lang-title" : "Select Language",
             "title" : ["Conv2XviD - Konvertálás XviD formátumra ({})"
                 , "Conv2XviD - Conversion to XviD format ({})"],
+            "err-msg" : ["Hiba: '{}'", "Error: '{}'"],
             "conv" : ["Konvertálás...", "Conversion..."],
             "stop-title" : ["A konvertálás megszakítása"
                 , "Cancelling the conversion"],
@@ -74,6 +75,7 @@ class Lang:
             "no-streams" : ["Az adatfolyamok beolvasása nem sikerült."
                     " Minden adatfolyam ki lesz választva!"
                     , "Failed to read data streams. All streams are selected!"],
+            "unknown" : ["Ismeretlen", "Unknown"],
             "warn-unknown-remaining-time" : ["A hátralévő idő ismeretlen!"
                 , "The remaining time is unknown!"],
             "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"]
