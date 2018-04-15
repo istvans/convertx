@@ -230,7 +230,6 @@ class Config(AbstractDialog):
     def ok(self):
         for i, cs in enumerate(self.__check_boxes):
             self.__streams.streams[i].enabled = True if cs.selected.get() else False
-            print(cs.selected.get())
 
 ###############################################################################
 
@@ -292,7 +291,6 @@ class DisabledState:
         self.stopb = tk.DISABLED
 
     def __eq__(self, other):
-        print("{} vs {}".format(type(self).__name__, type(other).__name__))
         return type(self).__name__ == type(other).__name__
 
 class InitState(DisabledState):
@@ -301,6 +299,7 @@ class InitState(DisabledState):
         self.menu = tk.NORMAL
         self.dir = tk.NORMAL
         self.openb = tk.NORMAL
+        self.reset_progress = True
 
 class ProgressState(DisabledState, ABC):
     def __init__(self):
@@ -322,7 +321,6 @@ class ReadyState(InputAvailableState):
         super().__init__()
         self.startb = tk.NORMAL
         self.save_delb = tk.NORMAL
-        self.reset_progress = True
 
 class ConversionState(ProgressState):
     def __init__(self):
@@ -336,7 +334,6 @@ class OutputDeletedState(ReadyState):
 class FinishedState(ReadyState):
     def __init__(self):
         super().__init__()
-        self.reset_progress = False
 
 class ConversionFailedState(ReadyState):
     def __init__(self):
@@ -374,11 +371,9 @@ class WindowStateMachine:
     def step(self):
         """ Set window items according to the current state, if there was a state change """
         if self.__state_changed():
-            print("hoho, state changed")
             if self.__state.clear_error_msg:
                 self.error_msg = None
             if self.__state.reset_progress:
-                print("progress reset")
                 pb_value = self.__progressbar["value"]
                 if pb_value > 0:
                     self.__progressbar.step(amount=(-1 * pb_value))
@@ -529,6 +524,8 @@ class Window:
             elif msg.type == Type.FAILED:
                 self.__state_machine.notify(WindowEvent.ERROR)
                 self.__state_machine.error_msg = msg.data[0]
+            elif msg.type == Type.EXTRACTING_SUBTITLES:
+                self.__set_state("extract-subs")
             elif msg.type == Type.FINISHED:
                 self.__state_machine.notify(WindowEvent.FINISH)
             elif msg.type == Type.WARN_UNKNOWN_REMAINING_TIME:
@@ -715,7 +712,6 @@ class Window:
         elif w.winfo_class() == "Entry" and w.name is not None \
                 and w.translate:
             if w.name == "err-msg":
-                print("found '{}'".format(w))
                 self.__set_state("err-msg")
             else:
                 w.set_text(self.__lang.text(w.name))
@@ -749,8 +745,12 @@ class Window:
         else:
             d = tk.filedialog.askdirectory()
         if d:
-            self.__dire.set_path(d)
-            self.__app_q.put(Msg(Type.SET_CFG, "dir", d))
+            if ' ' in d:
+                self.__set_state("err-space-in-path")
+            else:
+                self.__set_state()
+                self.__dire.set_path(d)
+                self.__app_q.put(Msg(Type.SET_CFG, "dir", d))
 
     def __open_input(self):
         d = self.__dire.get_text()
@@ -759,9 +759,13 @@ class Window:
         else:
             inp = tk.filedialog.askopenfilename()
         if inp:
-            self.__opene.set_path(inp)
-            self.__app_q.put(Msg(Type.INPUT_FILE, inp))
-            self.__state_machine.notify(WindowEvent.INPUT_PARSING)
+            if ' ' in inp:
+                self.__set_state("err-space-in-path")
+            else:
+                self.__set_state()
+                self.__opene.set_path(inp)
+                self.__app_q.put(Msg(Type.INPUT_FILE, inp))
+                self.__state_machine.notify(WindowEvent.INPUT_PARSING)
 
     def __open_settings(self):
         Config(self.__window, self.__cfg, self.__colors, self.__lang
@@ -772,9 +776,13 @@ class Window:
             out = tk.filedialog.asksaveasfile(defaultextension=".avi"
                     , filetypes=[(self.__lang.text("file-types"), "*.avi")])
             if out:
-                self.__savee.set_path(out.name)
-                self.__app_q.put(Msg(Type.OUTPUT_FILE, out.name))
-                self.__state_machine.notify(WindowEvent.OUTPUT_AVAIL)
+                if ' ' in out.name:
+                    self.__set_state("err-space-in-path")
+                else:
+                    self.__set_state()
+                    self.__savee.set_path(out.name)
+                    self.__app_q.put(Msg(Type.OUTPUT_FILE, out.name))
+                    self.__state_machine.notify(WindowEvent.OUTPUT_AVAIL)
         except IOError as err:
             eprint(err)
             self.__savee.set_path()

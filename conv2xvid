@@ -10,6 +10,7 @@ from cxutils import eprint
 import cxwindow as cx
 import os
 from queue import Queue
+from threading import Lock
 
 ###############################################################################
 
@@ -22,10 +23,14 @@ class Application:
         self.__window = cx.Window(window_queue=self.__window_q
                 , app_queue=self.__app_q, cfg=self.__cfg)
         self.__input_file = None
+        self.__streams = None
+        self.__subtitles = None
+        self.__output_file = None
         self.__num_of_frames = None
         self.__one_percent = None
         self.__video_parser = None
-        self.__converter = None 
+        self.__converter = None
+        self.__subtitle_lock = Lock()
         
         self.__run = True
         while self.__run:
@@ -87,14 +92,15 @@ class Application:
             self.__run = False
 
     def __start_conversion(self, streams):
+        self.__streams = streams
         if self.__input_file is None:
-            raise RuntimeError("INTERNAL ERROR: input file should have "
-                    "been already received!")
+            raise RuntimeError("INTERNAL ERROR: input file should have been already received!")
+        if self.__streams is None:
+            raise RuntimeError("INTERNAL ERROR: streams should have been already received!")
         if self.__output_file is None:
-            raise RuntimeError("INTERNAL ERROR: output file should have "
-                    "been already received!")
+            raise RuntimeError("INTERNAL ERROR: output file should have been already received!")
 
-        self.__converter = cxp.ConverterCommand(self.__input_file, streams, self.__output_file
+        self.__converter = cxp.ConverterCommand(self.__input_file, self.__streams, self.__output_file
                 , self.__num_of_frames, self.__one_percent
                 , self.__conversion_step, self.__conversion_elapsed, self.__conversion_left, self.__conversion_finished)
         self.__converter.start()
@@ -108,12 +114,46 @@ class Application:
     def __conversion_left(self, left_seconds):
         self.__window_q.put(Msg(Type.LEFT, left_seconds))
 
+    def __subtitle_extracted(self, subtitle, failed, last_line):
+        with self.__subtitle_lock:
+            for s in self.__subtitles:
+                if s.id == subtitle.id:
+                    s.extracted = True
+                    break
+            subtitle_extraction_finished = True
+            for s in self.__subtitles:
+                if not s.extracted:
+                    subtitle_extraction_finished = False
+                    break
+            if subtitle_extraction_finished:
+                self.__window_q.put(Msg(Type.FINISHED))
+                self.__subtitles = None
+
+    def __extract_subtitles(self):
+        self.__window_q.put(Msg(Type.EXTRACTING_SUBTITLES))
+        output_filename, _ = os.path.splitext(self.__output_file)
+        subtitle_id = 0
+        self.__subtitles = []
+        for stream in self.__streams.streams:
+            if stream.enabled and stream.is_subtitle():
+                str_file = "{}.{}.srt".format(output_filename, stream.lang)
+                # save the subitles next to the output file
+                self.__subtitles.append(cxp.Subtitle(str_id=subtitle_id, str_file=str_file, stream=stream))
+                subtitle_id += 1
+
+        for s in self.__subtitles:
+            cxp.SubtitleExtractorCommand(self.__input_file, s, self.__subtitle_extracted).start()
+
     def __conversion_finished(self, cancelled, failed, err_msg):
         if not cancelled:
             if failed:
                 self.__window_q.put(Msg(Type.FAILED, err_msg))
+            elif self.__streams.has_subtitle():
+                self.__extract_subtitles()
             else:
                 self.__window_q.put(Msg(Type.FINISHED))
+        if not self.__streams.has_subtitle():
+            self.__streams = None
 
     def __remove_file(self, file_path):
         try:

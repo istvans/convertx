@@ -23,6 +23,7 @@ class Type(AutoNumber):
     OUTPUT_FILE = ()
     FAILED = ()
     FINISHED = ()
+    EXTRACTING_SUBTITLES = ()
     UPDATE_CHECK = ()
     UPDATE_AVAIL = ()
     UPDATE_START = ()

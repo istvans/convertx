@@ -1,0 +1,109 @@
+$ ffmpeg -i "$INPUT_V" -threads 1 -vcodec libxvid -q:v 0 -q:a 0 -acodec libmp3lame -b:a 128k -ac 2 -map 0 -y "$OUTPUT_V"
+real    1m19.494s
+user    1m26.000s
+sys     0m2.734s
+
+$ ffmpeg -i "$INPUT_V" -threads 1 -vcodec libxvid -q:v 0 -q:a 0 -acodec libmp3lame -b:a 128k -ac 2 -map 0:0 -map 0:1 -y "$OUTPUT_V"
+real    1m0.717s
+user    1m14.938s
+sys     0m2.609s
+
+$ ffmpeg -i "$INPUT_V" -threads 2 -vcodec libxvid -q:v 0 -q:a 0 -acodec libmp3lame -b:a 128k -ac 2 -map 0:0 -map 0:1 -y "$OUTPUT_V"
+real    1m20.863s
+user    1m17.281s
+sys     0m2.578s
+
+$ ffmpeg -i "$INPUT_V" -threads:0 4 -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m4.214s
+user    1m15.719s
+sys     0m2.500s
+
+$ ffmpeg -i "$INPUT_V" -threads:0 2 -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m4.158s
+user    1m14.531s
+sys     0m2.656s
+
+$ ffmpeg -i "$INPUT_V" -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m3.561s
+user    1m15.422s
+sys     0m2.531s
+
+$ ffmpeg -i "$INPUT_V" -map 0:v -vcodec libxvid -q:v 0 -map 0:a -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m11.827s
+user    1m25.859s
+sys     0m2.734s
+
+$ ffmpeg -i "$INPUT_V" -threads 1 -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m3.108s
+user    1m15.969s
+sys     0m2.266s
+
+$ ffmpeg -threads 0 -i "$INPUT_V" -threads 0 -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m4.230s
+user    1m15.688s
+sys     0m2.266s
+
+$ ffmpeg -threads 0 -i "$INPUT_V" -threads 1 -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m2.114s
+user    1m15.406s
+sys     0m2.375s
+
+$ ffmpeg -threads auto -i "$INPUT_V" -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    0m59.699s
+user    1m14.750s
+sys     0m2.547s
+
+$ ffmpeg -threads auto -i "$INPUT_V" -threads 1 -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    0m58.890s
+user    1m14.594s
+sys     0m2.547s
+
+$ ffmpeg -i "$INPUT_V" -map 0:v -vcodec libxvid -q:v 0 -map 0:a:0 -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    0m59.312s
+user    1m14.906s
+sys     0m2.500s
+
+$ ffmpeg -threads auto -i "$INPUT_V" -threads 1 -map 0:v -vcodec libxvid -q:v 0 -map 0:a -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m12.046s
+user    1m25.453s
+sys     0m3.031s
+
+$ ffmpeg -i "$INPUT_V" -map 0:v -vcodec libxvid -q:v 0 -map 0:a -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m10.185s
+user    1m24.734s
+sys     0m2.859s
+
+$ ffmpeg -i "$INPUT_V" -threads 1 -map 0:v -vcodec libxvid -q:v 0 -map 0:a -acodec libmp3lame -q:a 0 -b:a 128k -ac 2 -y "$OUTPUT_V"
+real    1m13.020s
+user    1m25.219s
+sys     0m2.828s
+
+### Settings ###
+$ ffmpeg -threads 0 -i ~/win_home/Videos/Movies/Blade.Runner.2049.2017.BDRiP.x264.HuN-HyperX/bladerunner-sd-hyperx.mkv -map 0:v -c copy -f null -y /dev/null
+frame=235152 fps=4768 q=-1.0 Lsize=N/A time=02:43:27.67 bitrate=N/A
+real    0m56.803s
+user    0m11.641s
+sys     0m10.500s
+
+
+$ cd /mnt/d/dev/git/convertx/samples/
+
+find streams:
+$ ffmpeg -i sample.mkv -map 0:v -c copy -f null -y /dev/null
+extract subtitle:
+$ srt_output="sample.hun.srt"
+$ ffmpeg -i sample.mkv -map 0:3 -y $srt_output
+convert without subtitle:
+$ ffmpeg -i sample.mkv -c:v libxvid -q:v 0 -c:a libmp3lame -q:a 0 -b:a 128k -ac 2 -map 0:0 -map 0:2 -metadata:0:2 language=eng -y sample.avi
+
+
+conversion:
+if enabled str streams:
+    for s in enabled str streams:
+        if not (extract the subtitle into s.subtitle_file):
+            report srt extract error + last line
+endif
+add ffmpeg_srt_inputs()
+modify get_ffmpeg_mappings
+
+

@@ -75,8 +75,10 @@ class Lang:
             "no-streams" : ["Az adatfolyamok beolvasása nem sikerült."
                     " Minden adatfolyam ki lesz választva!"
                     , "Failed to read data streams. All streams are selected!"],
+            "extract-subs" : ["Feliratok kinyerése", "Extracting subtitles"],
             "unknown" : ["Ismeretlen", "Unknown"],
             "warn-unknown-remaining-time" : ["A hátralévő idő ismeretlen!"
                 , "The remaining time is unknown!"],
-            "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"]
+            "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"],
+            "err-space-in-path": ["Az útvonal nem tartalmazhat szóközt!", "The path cannot contain space!"]
         }
