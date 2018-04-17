@@ -196,9 +196,18 @@ class LanguageSelector(AbstractDialog):
 
 class Update(AbstractDialog):
     """ A window to help updating the application """
-    def __init__(self, parent, cfg, colors, lang):
-        super().__init__(parent, 200, 100, cfg, colors, lang
-                , "update-title")
+    def __init__(self, parent, cfg, colors, lang, app_q):
+        super().__init__(parent, 300, 200, cfg, colors, lang, "update-title")
+        self.__app_q = app_q
+    
+    def init_body(self):
+        pass
+
+    def ok(self):
+        pass
+
+    def cancel(self):
+        pass
 
 ###############################################################################
 
@@ -823,5 +832,5 @@ class Window:
         return error_text
 
     def __update(self):
-        Update(self.__window, self.__cfg, self.__colors, self.__lang)
+        Update(self.__window, self.__cfg, self.__colors, self.__lang, self.__app_q)
     
