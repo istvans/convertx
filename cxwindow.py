@@ -3,7 +3,7 @@ import sys
 sys.path.append("/lib/convert-x")
 
 from abc import ABC
-from cxlang import Lang
+from cxlang import Lang, UniversalText
 from cxmsg import Msg, Type
 from cxstream import StreamType
 from cxutils import eprint, AutoNumber
@@ -88,12 +88,13 @@ class AbstractDialog(ABC):
     """ Abstract dialog window base class """
     ### Public Methods ###
     def __init__(self, parent, width, height, cfg, colors, lang
-            , title, single_lang_tile=False):
+            , title, ok_button_text=UniversalText(text="OK", single=True)):
         self.parent = parent
         self.cfg = cfg
         self.colors = colors
         self.lang = lang
         self.cancelled = False
+        self.completed = False
         
         if parent is None:
             self.window = tk.Tk()
@@ -102,7 +103,7 @@ class AbstractDialog(ABC):
             self.window.transient(parent)
             self.window.grab_set()
         
-        setup_window(self.window, self.lang.text(title, single_lang_tile)
+        setup_window(self.window, self.lang.universal_text(title)
                 , self.cfg, self.__cancel)
         
         height += 32 # for the button line
@@ -119,8 +120,10 @@ class AbstractDialog(ABC):
         ####################
         self.init_body()
         ####################
-        
-        self.okb = tk.Button(self.window, text="OK", command=self.__ok)
+       
+        self.okb_text = tk.StringVar()
+        self.okb = tk.Button(self.window, textvariable=self.okb_text, command=self.__ok)
+        self.okb_text.set(self.lang.universal_text(ok_button_text))
         self.okb.pack()
         
         self.colors.set_widget(self.window)
@@ -149,9 +152,10 @@ class AbstractDialog(ABC):
         self.window.destroy()
 
     def __ok(self):
-        self.ok()
-        self.cancelled = False
-        self.__close_window()
+        self.completed = self.ok()
+        if self.completed:
+            self.cancelled = False
+            self.__close_window()
 
     def __cancel(self):
         self.cancel()
@@ -165,7 +169,7 @@ class LanguageSelector(AbstractDialog):
     ### Public Methods ###
     def __init__(self, parent, cfg, colors, lang):
         super().__init__(parent, 200, (len(lang.supp_langs) * 12), cfg, colors, lang
-                , "lang-title", single_lang_tile=True)
+                , UniversalText(text="lang-title", single=True))
 
     def init_body(self):
         self.__radio_buttons = []
@@ -185,6 +189,7 @@ class LanguageSelector(AbstractDialog):
     
     def ok(self):
         self.__accept()
+        return True
 
     def cancel(self):
         self.__accept()
@@ -197,14 +202,16 @@ class LanguageSelector(AbstractDialog):
 class Update(AbstractDialog):
     """ A window to help updating the application """
     def __init__(self, parent, cfg, colors, lang, app_q):
-        super().__init__(parent, 300, 200, cfg, colors, lang, "update-title")
+        super().__init__(parent, 300, 200, cfg, colors, lang, UniversalText("update-title")
+                , UniversalText("update-search"))
         self.__app_q = app_q
     
     def init_body(self):
         pass
 
     def ok(self):
-        pass
+        self.okb_text.set("Hello!")
+        return False
 
     def cancel(self):
         pass
@@ -219,7 +226,7 @@ class Config(AbstractDialog):
         width = 200 if self.__streams.streams else 600
         height = (len(self.__streams.streams) * 20) if self.__streams.streams else 24
         super().__init__(parent, width, height, cfg, colors, lang
-                , "config-title")
+                , UniversalText("config-title"))
 
     def init_body(self):
         self.__check_boxes = []
@@ -239,6 +246,7 @@ class Config(AbstractDialog):
     def ok(self):
         for i, cs in enumerate(self.__check_boxes):
             self.__streams.streams[i].enabled = True if cs.selected.get() else False
+        return True
 
 ###############################################################################
 

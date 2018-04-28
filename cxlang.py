@@ -3,7 +3,15 @@
 
 ###############################################################################
 
+class UniversalText:
+    def __init__(self, text, single=False):
+        self.text = text
+        self.single = single
+
 class Lang:
+    def universal_text(self, universal_text):
+        return self.text(universal_text.text, universal_text.single)
+
     def text(self, key, single=False):
         if key not in self.__texts:
             raise RuntimeError("INTERNAL ERROR: Unknown key: '{}'".format(key))
@@ -20,65 +28,67 @@ class Lang:
 
         self.supp_langs = ["Magyar", "English"]
         self.__texts = {
-            "version" : "v1.0.0",
-            "lang-title" : "Select Language",
-            "title" : ["Conv2XviD - Konvertálás XviD formátumra ({})"
-                , "Conv2XviD - Conversion to XviD format ({})"],
-            "err-msg" : ["Hiba: '{}'", "Error: '{}'"],
+            "config-title" : ["Konfiguráció", "Configuration"],
             "conv" : ["Konvertálás...", "Conversion..."],
-            "stop-title" : ["A konvertálás megszakítása"
-                , "Cancelling the conversion"],
-            "stop-msg" : ["Biztos, hogy le akarod állítani a konvertálást?"
-                , "Are you sure you want to cancel the conversion?"],
-            "stopped" : ["Megszakítva", "Cancelled"],
-            "finished" : ["Kész!", "Done!"],
-            "exit-title" : ["A program bezárása", "Closing the application"],
+            "elapsedl" : ["Az eltelt idő:", "The elapsed time:"],
+            "err-msg" : ["Hiba: '{}'", "Error: '{}'"],
+            "err-space-in-path": ["Az útvonal nem tartalmazhat szóközt!", "The path cannot contain space!"],
+            "extract-subs" : ["Feliratok kinyerése", "Extracting subtitles"],
             "exit-msg" : ["Biztos, hogy ki akarsz lépni?"
                 , "Are you sure you want to quit?"],
-            "del-target-title" : ["Az új file törlése"
-                , "The new file's delition"],
+            "exit-title" : ["A program bezárása", "Closing the application"],
             "del-target-msg" : ["Biztos, hogy törölni szeretnéd?"
                 , "Are you sure you want to delete?"],
-            "opening" : ["Megnyitás...", "Opening..."],
-            "file-types" : ["avi file-ok", "avi files"],
-            "config-title" : ["Konfiguráció", "Configuration"],
-            "update-title" : ["Frissítés keresése...", "Searching update..."],
+            "del-target-title" : ["Az új file törlése"
+                , "The new file's delition"],
+            "dirb" : ["Választás", "Choose"],
+            "dire" : ["Még nem választottál alapértelmezett mappát."
+                , "You haven't yet chosen a default directory."],
             "dirl" : [
                 "Az alapértelmezett mappa (ha a megadott elérési út elérhető):"
                 , "The default directory (if the specified path is reachable):"
                 ],
-            "dire" : ["Még nem választottál alapértelmezett mappát."
-                , "You haven't yet chosen a default directory."],
-            "dirb" : ["Választás", "Choose"],
-            "openl" : ["Az eredeti file, amit át szeretnél konvertálni:"
-                , "The original file to be converted:"],
-            "opene" : ["Itt jelenik majd meg az eredeti file elérési útvonala."
-                , "The original file's path is going to be displayed here."],
-            "openb" : ["Megnyitás", "Open"],
-            "open_settingsb" : ["Beállítások", "Settings"],
-            "savel" : ["Az új file, amire konvertálni fogunk:"
-                , "The new file, the target of our conversion:"],
-            "savee" : ["Itt jelenik majd meg az új file elérési útvonala."
-                , "The target file's path is going to be displayed here."],
-            "saveb" : ["Mentés", "Save"],
-            "save-delb" : ["Törlés", "Delete"],
-            "startb" : ["Start", "Start"],
-            "stopb" : ["Stop", "Stop"],
-            "elapsedl" : ["Az eltelt idő:", "The elapsed time:"],
+            "file-types" : ["avi file-ok", "avi files"],
+            "finished" : ["Kész!", "Done!"],
+            "lang-title" : "Select Language",
             "leftl" : ["A becsült hátralévő idő:"
                 , "The estimated remaining time:"],
             "menu-lang" : ["Nyelv", "Language"],
             "menu-update" : ["Frissítés", "Update"],
-            "AUDIO" : ["Hang", "Audio"],
-            "SUBTITLE" : ["Felirat", "Subtitle"],
-            "VIDEO" : ["Videó", "Video"],
             "no-streams" : ["Az adatfolyamok beolvasása nem sikerült."
                     " Minden adatfolyam ki lesz választva!"
                     , "Failed to read data streams. All streams are selected!"],
-            "extract-subs" : ["Feliratok kinyerése", "Extracting subtitles"],
+            "open_settingsb" : ["Beállítások", "Settings"],
+            "openb" : ["Megnyitás", "Open"],
+            "opene" : ["Itt jelenik majd meg az eredeti file elérési útvonala."
+                , "The original file's path is going to be displayed here."],
+            "opening" : ["Megnyitás...", "Opening..."],
+            "openl" : ["Az eredeti file, amit át szeretnél konvertálni:"
+                , "The original file to be converted:"],
+            "save-delb" : ["Törlés", "Delete"],
+            "saveb" : ["Mentés", "Save"],
+            "savee" : ["Itt jelenik majd meg az új file elérési útvonala."
+                , "The target file's path is going to be displayed here."],
+            "savel" : ["Az új file, amire konvertálni fogunk:"
+                , "The new file, the target of our conversion:"],
+            "startb" : ["Start", "Start"],
+            "stop-msg" : ["Biztos, hogy le akarod állítani a konvertálást?"
+                , "Are you sure you want to cancel the conversion?"],
+            "stop-title" : ["A konvertálás megszakítása"
+                , "Cancelling the conversion"],
+            "stopb" : ["Stop", "Stop"],
+            "stopped" : ["Megszakítva", "Cancelled"],
+            "title" : ["Conv2XviD - Konvertálás XviD formátumra ({})"
+                , "Conv2XviD - Conversion to XviD format ({})"],
             "unknown" : ["Ismeretlen", "Unknown"],
+            "update-search" : ["Frissítések keresése", "Look for update"],
+            "update-title" : ["A program frissítése", "Application update"],
+            "version" : "v1.0.0",
+            "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"],
             "warn-unknown-remaining-time" : ["A hátralévő idő ismeretlen!"
                 , "The remaining time is unknown!"],
-            "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"],
-            "err-space-in-path": ["Az útvonal nem tartalmazhat szóközt!", "The path cannot contain space!"]
+            "AUDIO" : ["Hang", "Audio"],
+            "OK" : "OK",
+            "SUBTITLE" : ["Felirat", "Subtitle"],
+            "VIDEO" : ["Videó", "Video"],
         }
