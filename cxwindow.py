@@ -202,19 +202,50 @@ class LanguageSelector(AbstractDialog):
 class Update(AbstractDialog):
     """ A window to help updating the application """
     def __init__(self, parent, cfg, colors, lang, app_q):
-        super().__init__(parent, 300, 200, cfg, colors, lang, UniversalText("update-title")
-                , UniversalText("update-search"))
         self.__app_q = app_q
+        self.__password = tk.StringVar()
+        self.__remember_pass = tk.IntVar()
+        self.__current_version = tk.StringVar()
+        self.__new_version = tk.StringVar()
+        self.__status = tk.StringVar()
+        super().__init__(parent, 300, 140, cfg, colors, lang, UniversalText("update-title")
+                , UniversalText("update-search"))
     
     def init_body(self):
-        pass
+        tk.Label(self.window, text="Jelszó:").pack()
+        self.__pass_entry = tk.Entry(self.window, show='*', textvariable=self.__password, width=15)
+        self.__pass_entry.pack()
+        self.__pass_rem = tk.Checkbutton(self.window, text="Jelszó megjegyzése:"
+                , variable=self.__remember_pass)
+        self.__pass_rem.pack()
+        tk.Label(self.window, text="Jelenlegi verzió:").pack()
+        tk.Label(self.window, textvariable=self.__current_version).pack()
+        tk.Label(self.window, text="Elérhető verzió:").pack()
+        tk.Label(self.window, textvariable=self.__new_version).pack()
+        tk.Label(self.window, textvariable=self.__status).pack()
 
     def ok(self):
-        self.okb_text.set("Hello!")
+        if not self.__password.get():
+            eprint("Password must be specified!")
+        else:
+            self.__app_q.put(Msg(Type.UPDATE_CHECK, self.__password.get()))
+            self.__status.set("Frissítés keresése...")
+            self.__disable()
+            #self.okb_text.set("Frissítés telepítése")
         return False
 
     def cancel(self):
-        pass
+        self.__app_q.put(Msg(Type.UPDATE_STOP))
+
+    def __disable(self):
+        self.okb["state"] = tk.DISABLED
+        self.__pass_entry["state"] = tk.DISABLED
+        self.__pass_rem["state"] = tk.DISABLED
+
+    def __enable(self):
+        self.okb["state"] = tk.NORMAL
+        self.__pass_entry["state"] = tk.NORMAL
+        self.__pass_rem["state"] = tk.NORMAL
 
 ###############################################################################
 
@@ -525,32 +556,32 @@ class Window:
         run = True
         try:
             msg = self.__window_q.get(block=False)
-            if msg.type == Type.OPENED:
+            if msg.type == Type.CLOSE_ACK:
+                run = False
+            elif msg.type == Type.ELAPSED:
+                self.__elapsede.set_text(self.__sec2time(msg.data[0]))
+            elif msg.type == Type.EXTRACTING_SUBTITLES:
+                self.__set_state("extract-subs")
+            elif msg.type == Type.FAILED:
+                self.__state_machine.notify(WindowEvent.ERROR)
+                self.__state_machine.error_msg = msg.data[0]
+            elif msg.type == Type.FINISHED:
+                self.__state_machine.notify(WindowEvent.FINISH)
+            elif msg.type == Type.LEFT:
+                self.__lefte.set_text(self.__sec2time(msg.data[0]))
+            elif msg.type == Type.OPENED:
                 self.__streams = msg.data[0]
                 self.__state_machine.notify(WindowEvent.INPUT_PARSED)
             elif msg.type == Type.STEP:
                 self.__progressbar.step(msg.data[0])
-            elif msg.type == Type.ELAPSED:
-                self.__elapsede.set_text(self.__sec2time(msg.data[0]))
-            elif msg.type == Type.LEFT:
-                self.__lefte.set_text(self.__sec2time(msg.data[0]))
             elif msg.type == Type.STOP_ACK:
                 self.__state_machine.notify(WindowEvent.STOP)
-            elif msg.type == Type.CLOSE_ACK:
-                run = False
-            elif msg.type == Type.FAILED:
-                self.__state_machine.notify(WindowEvent.ERROR)
-                self.__state_machine.error_msg = msg.data[0]
-            elif msg.type == Type.EXTRACTING_SUBTITLES:
-                self.__set_state("extract-subs")
-            elif msg.type == Type.FINISHED:
-                self.__state_machine.notify(WindowEvent.FINISH)
-            elif msg.type == Type.WARN_UNKNOWN_REMAINING_TIME:
-                self.__set_state("warn-unknown-remaining-time")
             elif msg.type == Type.WARN_PERMISSION_ERROR:
                 self.__state_machine.notify(WindowEvent.INPUT_PERMISSION_ERROR)
+            elif msg.type == Type.WARN_UNKNOWN_REMAINING_TIME:
+                self.__set_state("warn-unknown-remaining-time")
             else:
-                raise RuntimeError("Unknown message type!")
+                raise RuntimeError("Unexpected message: {}!".format(msg.type))
         except Empty:
             pass
         return run

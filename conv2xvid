@@ -5,6 +5,7 @@ sys.path.append("/lib/convert-x")
 
 import cxcfg as cfg
 from cxmsg import Msg, Type
+import cxpassword
 import cxproc as cxp
 from cxutils import eprint
 import cxwindow as cx
@@ -17,7 +18,8 @@ from threading import Lock
 class Application:
     ### Public Methods ###
     def __init__(self):
-        self.__cfg = cfg.Manager()
+        self.__cfg = cfg.ConfigManager()
+        self.__pass_manager = cxpassword.PasswordManager()
         self.__window_q = Queue()
         self.__app_q = Queue()
         self.__window = cx.Window(window_queue=self.__window_q
@@ -30,6 +32,8 @@ class Application:
         self.__one_percent = None
         self.__video_parser = None
         self.__converter = None
+        self.__update_searcher = None
+        self.__updater = None
         self.__subtitle_lock = Lock()
         
         self.__run = True
@@ -41,20 +45,26 @@ class Application:
     def __step(self):
         """ Process one message from the queue """
         msg = self.__app_q.get(block=True)
-        if msg.type == Type.START:
-            self.__start_conversion(msg.data[0])
-        elif msg.type == Type.STOP:
-            self.__stop(stay_alive=True)
-        elif msg.type == Type.CLOSE:
+        if msg.type == Type.CLOSE:
             self.__stop(stay_alive=False)
         elif msg.type == Type.DELETE:
             self.__remove_file(msg.data[0])
-        elif msg.type == Type.SET_CFG:
-            self.__cfg.set(msg.data[0], msg.data[1])
         elif msg.type == Type.INPUT_FILE:
             self.__parse_video(msg.data[0])
         elif msg.type == Type.OUTPUT_FILE:
             self.__output_file = msg.data[0]
+        elif msg.type == Type.SET_CFG:
+            self.__cfg.set(msg.data[0], msg.data[1])
+        elif msg.type == Type.START:
+            self.__start_conversion(msg.data[0])
+        elif msg.type == Type.STOP:
+            self.__stop(stay_alive=True)
+        elif msg.type == Type.UPDATE_CHECK:
+            self.__update_check(msg.data[0])
+        elif msg.type == Type.UPDATE_STOP:
+            self.__update_stop()
+        else:
+            raise RuntimeError("Unexpected message: {}!".format(msg.type))
     
     def __parse_video(self, input_file):
         prev_input_file = self.__input_file
@@ -160,6 +170,27 @@ class Application:
             os.remove(file_path)
         except FileNotFoundError as e:
             eprint(e)
+
+    def __update_stop(self):
+        if self.__update_searcher is not None:
+            self.__update_searcher.stop()
+        if self.__updater is not None:
+            self.__updater.stop()
+
+    def __update_check(self, password):
+        self.__update_searcher = cxp.UpdateSearch(password
+                , self.__update_checked).start()
+
+    def __update_checked(self, cancelled, failed, prev_version, new_version):
+        if cancelled:
+            return
+        if failed:
+            self.__window_q.put(Msg(Type.UPDATE_FAILED))
+        else:
+            if prev_version == new_version:
+                self.__window_q.put(Msg(Type.UPDATE_LATEST, prev_version))
+            else:
+                self.__window_q.put(Msg(Type.UPDATE_AVAIL, prev_version, new_version))
 
 ###############################################################################
 ###############################################################################

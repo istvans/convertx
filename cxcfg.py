@@ -1,19 +1,22 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append("/lib/convert-x")
+
+import cxpack
+from cxutils import eprint
 import os
 ###############################################################################
 
-class Manager():
+class ConfigManager():
     """ The configuration manager of conv2xvid """
     ### Public Methods ###
     def __init__(self):
         """ Read existing configuration or create the default """
-        self.__package = "convert-x"
-        self.__cfg_dir = os.path.join(os.environ["HOME"], ".config", self.__package)
-        self.__cfg_file = os.path.join(self.__cfg_dir, "config.ini")
+        self.__cfg_file = os.path.join(cxpack.config_dir, "config.ini")
         self.__cfg = {}
-        if not os.path.exists(self.__cfg_dir):
-            os.makedirs(self.__cfg_dir, 0o700)
+        if not os.path.exists(cxpack.config_dir):
+            os.makedirs(cxpack.config_dir, 0o700)
             self.__write_defaults()
         else:
             self.__read()
@@ -54,8 +57,8 @@ class Manager():
                 for line in config:
                     key, value = tuple(line.split('='))
                     self.__cfg[key] = "".join(value.split())
-        except IOError:
-            pass
+        except IOError as e:
+            eprint(e)
     
     def __write(self):
         """ Overwrite the entire configuration """
@@ -63,8 +66,8 @@ class Manager():
             with open(self.__cfg_file, 'w') as config:
                 for key, value in self.__cfg.items():
                     config.write("{}={}\n".format(key, value))
-        except IOError:
-            pass
+        except IOError as e:
+            eprint(e)
 
     def __write_defaults(self):
         self.__etc = "/etc"

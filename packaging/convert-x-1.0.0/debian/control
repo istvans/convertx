@@ -8,6 +8,6 @@ Standards-Version: 3.9.7
 Package: convert-x
 Priority: optional
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, ffmpeg, lame, x264, libxvidcore4, python3-tk, python3-pil.imagetk
+Depends: ${python3:Depends}, ${misc:Depends}, ffmpeg, lame, libxvidcore4, python3-pil.imagetk, python3-pip, python3-tk, x264
 Description: Collection of GUI wrappers to convert files to different formats
  * conv2xvid: A GUI wrapper to convert from any format supported by ffmpeg to XviD

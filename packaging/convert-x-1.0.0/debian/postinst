@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pip3 install simple-crypt
+
 . /lib/convert-x/setup 2>/dev/null
 if [ $? ]; then
     cat <<EOF >> $icon_file

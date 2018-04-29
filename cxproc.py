@@ -34,9 +34,14 @@ class AbstractCommand(ABC):
         if self.prestart():
             self.__start_time = time.time()
             self.process = subprocess.Popen(self.__command.split()
-                    , stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+                    , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
                     , universal_newlines=True)
             self.progress_thread.start()
+
+    def write_line(self, line):
+        if self.process is None:
+            raise RuntimeError("The process isn't ready yet!")
+        self.process.stdin.write(line)
 
     def progress(self, line, elapsed_seconds):
         """ Override to process the next line on the command's combined
@@ -64,13 +69,14 @@ class AbstractCommand(ABC):
                 self.process.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 self.process.kill()
+            print("Process {} was terminated".format(self.process))
             self.process = None
 
     def __read_next_line(self):
         for raw_line in iter(self.process.stdout.readline, ""):
             elapsed = time.time() - self.__start_time
             self.last_line = raw_line.rstrip()
-            print(self.last_line)
+            print("READ: '{}'".format(self.last_line))
             if self.cancelled:
                 break
             if not self.progress(self.last_line, elapsed):
@@ -222,3 +228,20 @@ class ConverterCommand(AbstractCommand):
             self.failed = True if self.last_line is None or\
                     not re.search("^\s*video:", self.last_line) else False
             self.__finished_cb(self.cancelled, self.failed, self.last_line)
+
+class UpdateSearch(AbstractCommand):
+    def __init__(self, password, finished_cb):
+        self.__finished_cb = finished_cb
+        self.previous_version = None
+        self.new_version = None
+        super().__init__("sudo apt-get update && sudo apt-cache policy ffmpeg")
+
+    def progress(self, line, elapsed_seconds):
+        pass
+
+    def finish(self):
+        if self.__finished_cb is not None:
+            self.failed = True if self.previous_version is None or\
+                    self.new_version is None else False
+            self.__finished_cb(self.cancelled, self.failed
+                    , self.previous_version, self.new_version)
