@@ -5,7 +5,7 @@ sys.path.append("/lib/convert-x")
 
 import cxcfg as cfg
 from cxmsg import Msg, Type
-import cxpassword
+#import cxpassword
 import cxproc as cxp
 from cxutils import eprint
 import cxwindow as cx
@@ -19,7 +19,7 @@ class Application:
     ### Public Methods ###
     def __init__(self):
         self.__cfg = cfg.ConfigManager()
-        self.__pass_manager = cxpassword.PasswordManager()
+        #self.__pass_manager = cxpassword.PasswordManager()
         self.__window_q = Queue()
         self.__app_q = Queue()
         self.__window = cx.Window(window_queue=self.__window_q

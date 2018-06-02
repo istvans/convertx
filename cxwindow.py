@@ -7,6 +7,7 @@ from cxlang import Lang, UniversalText
 from cxmsg import Msg, Type
 from cxstream import StreamType
 from cxutils import eprint, AutoNumber
+import os
 from PIL import Image, ImageTk
 from queue import Empty, Queue
 import tkinter as tk
@@ -26,7 +27,7 @@ def setup_window(window, title, cfg, close_cb):
 
 def set_window_icon(window, cfg):
     icon_path = cfg.get("icon")
-    if icon_path is not None:
+    if icon_path is not None and os.path.isfile(icon_path):
         try:
             img = ImageTk.PhotoImage(file=icon_path)
             # window._w is where the image is stored! It is freed up otherwise
@@ -34,7 +35,7 @@ def set_window_icon(window, cfg):
         except tk.TclError as e:
             eprint(e)
     else:
-        eprint("no icon")
+        eprint("ERROR: Cannot open icon file: '{}'!".format(icon_path))
 
 ###############################################################################
 ###############################################################################
@@ -509,6 +510,7 @@ class Window:
                 , pbg="blue", sbg="black", tbg="white")
         
         self.__window = None
+        self.__logo_canvas = None
         
         self.__lang = Lang(self.__cfg)
         if self.__lang.selected is None:
@@ -529,8 +531,13 @@ class Window:
     ### Private Methods ###
 
     def __loop(self):
-        self.__window = tk.Tk()
-        self.__main = tk.Frame(self.__window)
+        try:
+            self.__window = tk.Tk()
+            self.__main = tk.Frame(self.__window)
+        except tk.TclError as e:
+            eprint(e)
+            self.__app_q.put(Msg(Type.CLOSE))
+            return        
 
         setup_window(self.__window, self.__gen_title(), self.__cfg
                 , self.__on_closing)
@@ -773,10 +780,14 @@ class Window:
 
     def __load_logo(self):
         logo_path = self.__cfg.get("logo")
-        try:
-            logo_image = Image.open(logo_path)
-        except tk.TclError as e:
-            eprint(e)
+        if logo_path is not None and os.path.isfile(logo_path):
+            try:
+                logo_image = Image.open(logo_path)
+            except tk.TclError as e:
+                eprint(e)
+                return
+        else:
+            eprint("ERROR: Cannot open logo file: '{}'!".format(logo_path))
             return
 
         lh = 64

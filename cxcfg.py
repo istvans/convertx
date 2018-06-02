@@ -71,7 +71,7 @@ class ConfigManager():
 
     def __write_defaults(self):
         self.__etc = "/etc"
-        self.__readonly_dir = os.path.join(self.__etc, self.__package)
+        self.__readonly_dir = os.path.join(self.__etc, cxpack.package)
         self.__cfg["icon"] = os.path.join(self.__readonly_dir, "XviD.ico")
         self.__cfg["logo"] = os.path.join(self.__readonly_dir, "XviD_logo.png")
         self.__write()
