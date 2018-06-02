@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import sys
-sys.path.append("/lib/convert-x")
-
 import cxpack
 from cxutils import eprint
 import os

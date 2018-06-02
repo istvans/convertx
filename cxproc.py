@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import sys
-sys.path.append("/lib/convert-x")
-
 from abc import ABC
 from cxstream import Stream, Streams
 import re

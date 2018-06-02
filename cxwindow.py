@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.append("/lib/convert-x")
-
 from abc import ABC
 from cxlang import Lang, UniversalText
 from cxmsg import Msg, Type
