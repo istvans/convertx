@@ -2,8 +2,9 @@
 
 pip3 install simple-crypt
 
-. /lib/convert-x/setup 2>/dev/null
-if [ $? ]; then
+. /lib/convert-x/environment 2>/dev/null
+
+if [ $? -a ! -f $icon_file ]; then
     cat <<EOF >> $icon_file
 [Desktop Entry]
 Name=Conv2XviD

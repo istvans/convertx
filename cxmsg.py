@@ -25,7 +25,6 @@ class Type(AutoNumber):
     UPDATE_FAILED = ()
     UPDATE_FINISHED = ()
     UPDATE_LATEST = ()
-    UPDATE_SAVE_PASS = ()
     UPDATE_START = ()
     UPDATE_STOP = ()
     WARN_PERMISSION_ERROR = ()

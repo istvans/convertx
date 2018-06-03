@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from abc import ABC
+import cxpack
 from cxstream import Stream, Streams
+import pexpect as pe
 import re
 import subprocess
 import threading as th
@@ -9,7 +11,7 @@ import time
 
 ###############################################################################
 
-class AbstractCommand(ABC):
+class AbstractReadOnlyLongCommand(ABC):
     def __init__(self, command):
         """ Initialise but do not start the command yet """
         self.__command = command
@@ -34,11 +36,6 @@ class AbstractCommand(ABC):
                     , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
                     , universal_newlines=True)
             self.progress_thread.start()
-
-    def write_line(self, line):
-        if self.process is None:
-            raise RuntimeError("The process isn't ready yet!")
-        self.process.stdin.write(line)
 
     def progress(self, line, elapsed_seconds):
         """ Override to process the next line on the command's combined
@@ -82,7 +79,7 @@ class AbstractCommand(ABC):
         self.process = None
         self.finish()
 
-class VideoParserCommand(AbstractCommand):
+class VideoParserCommand(AbstractReadOnlyLongCommand):
     def __init__(self, input_file, finished_cb):
         if input_file is None:
             raise RuntimeError("INTERNAL ERROR: input file cannot be None at this stage!")
@@ -147,7 +144,7 @@ class Subtitle:
         self.stream = stream
         self.extracted = False
 
-class SubtitleExtractorCommand(AbstractCommand):
+class SubtitleExtractorCommand(AbstractReadOnlyLongCommand):
     def __init__(self, input_file, subtitle, finished_cb):
         super().__init__(("ffmpeg"
             # input file options:
@@ -167,7 +164,7 @@ class SubtitleExtractorCommand(AbstractCommand):
                     not re.search("^\s*video:", self.last_line) else False
             self.__finished_cb(self.__subtitle, self.failed, self.last_line)
 
-class ConverterCommand(AbstractCommand):
+class ConverterCommand(AbstractReadOnlyLongCommand):
     """ Converter command """
     def __init__(self, input_file, streams, output_file
             , num_of_frames, one_percent
@@ -226,19 +223,118 @@ class ConverterCommand(AbstractCommand):
                     not re.search("^\s*video:", self.last_line) else False
             self.__finished_cb(self.cancelled, self.failed, self.last_line)
 
-class UpdateSearch(AbstractCommand):
+###############################################################################
+###############################################################################
+
+class ReadWriteShortCommand:
+    def __init__(self, command, events=None, timeout=None):
+        self.command = command
+        self.events = events
+        self.timeout = timeout
+
+    def run(self):
+        return pe.run(self.command, events=self.events, timeout=self.timeout)
+
+class AbstractReadWriteShortCommand(ABC):
+    def __init__(self, command, events=None, timeout=None):
+        """ Initialise but do not start the command yet """
+        self._command = ReadWriteShortCommand(command, events=events, timeout=timeout)
+
+    def run(self):
+        return self._command.run().decode("utf-8")
+
+    def _gen_password_events(self, password):
+        password_answer = "{}\n".format(password.get())
+        return {"[pP]assword":password_answer, "[jJ]elszava":password_answer}
+
+class UpdateDownloader(AbstractReadWriteShortCommand):
+    def __init__(self, password):
+        super().__init__(command="sudo apt-get update"
+            , events=self._gen_password_events(password))
+
+class UpdateVersionChecker(AbstractReadWriteShortCommand):
+    def __init__(self, password):
+        super().__init__(command="sudo apt-cache policy {}".format(cxpack.package)
+            , events=self._gen_password_events(password))
+
+class UpdateInstaller(AbstractReadWriteShortCommand):
+    def __init__(self, password):
+        expected_events = self._gen_password_events(password)
+        expected_events["Folytatni akarja?"] = "i\n"
+        expected_events["Do you want to continue?"] = "y\n"
+        super().__init__(command="sudo apt-get install {}".format(cxpack.package)
+            , events=expected_events)
+
+################################################################################
+
+class UpdateSearch:
     def __init__(self, password, finished_cb):
         self.__finished_cb = finished_cb
-        self.previous_version = None
-        self.new_version = None
-        super().__init__("sudo apt-get update && sudo apt-cache policy ffmpeg")
+        self.__download = UpdateDownloader(password)
+        self.__check = UpdateVersionChecker(password)
+        self.__run_thread = th.Thread(target=self.__process)
+        self._failed = False
+        self.__installed_version = None
+        self.__candidate_version = None
 
-    def progress(self, line, elapsed_seconds):
-        pass
+    def start(self):
+        self.__run_thread.start()
 
-    def finish(self):
+    def __process(self):
+        self.__download.run()
+        self.__versions_text = self.__check.run()
+        installed = re.search("(Installed|Telepítve):\s*(\S+)", self.__versions_text)
+        candidate = re.search("(Candidate|Jelölt):\s*(\S+)", self.__versions_text)
+        if installed and candidate:
+            self.__installed_version = installed.group(1)
+            self.__candidate_version = candidate.group(1)
+        self.__finish()
+
+    def __finish(self):
         if self.__finished_cb is not None:
-            self.failed = True if self.previous_version is None or\
-                    self.new_version is None else False
-            self.__finished_cb(self.cancelled, self.failed
-                    , self.previous_version, self.new_version)
+            self._failed = True if self.__versions_text is None or self.__installed_version is None or\
+                    self.__candidate_version is None else False
+
+            last_line = None
+            if self.__versions_text is not None:
+                last_line = self.__versions_text.splitlines()[-1]
+
+            self.__finished_cb(self._failed, self.__installed_version, self.__candidate_version, last_line)
+
+################################################################################
+
+class UpdateInstall:
+    def __init__(self, password, finished_cb):
+        self.__finished_cb = finished_cb
+        self.__install = UpdateInstaller(password)
+        self.__check = UpdateVersionChecker(password)
+        self.__run_thread = th.Thread(target=self.__process)
+        self._failed = False
+        self.__installed_version = None
+        self.__candidate_version = None
+        self.__result = None
+
+    def start(self):
+        self.__run_thread.start()
+
+    def __process(self):
+        self.__result = self.__install.run()
+        versions_text = self.__check.run()
+        installed = re.search("(Installed|Telepítve):\s*(\S+)", versions_text)
+        candidate = re.search("(Candidate|Jelölt):\s*(\S+)", versions_text)
+        if installed and candidate:
+            self.__installed_version = installed.group(1)
+            self.__candidate_version = candidate.group(1)
+        self.__finish()
+
+    def __finish(self):
+        if self.__finished_cb is not None:
+            self._failed = True if self.__result is None or self.__installed_version is None or\
+                self.__candidate_version is None or\
+                self.__installed_version != self.__candidate_version else False
+
+            last_line = None
+            if self.__result is not None:
+                last_line = self.__result.splitlines()[-1]
+
+            self.__finished_cb(self._failed, self.__installed_version, last_line)

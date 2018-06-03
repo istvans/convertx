@@ -80,7 +80,25 @@ class Lang:
             "title" : ["Conv2XviD - Konvertálás XviD formátumra ({})"
                 , "Conv2XviD - Conversion to XviD format ({})"],
             "unknown" : ["Ismeretlen", "Unknown"],
-            "update-search" : ["Frissítések keresése", "Look for update"],
+            "update-available" : ["Frissítés érhető el", "Update is available"],
+            "update-cancel-title" : ["A frissítő bezárása", "Closing the updater"],
+            "update-cancel" : ["Biztos, hogy be akarod zárni az ablakot?"
+                , "Are you sure you want to close this window?"],
+            "update-cancel-install-title" : ["Telepítés folyamatban...", "The installation is in progress..."],
+            "update-cancel-install" : ["Biztos, hogy be akarod zárni az ablakot?"
+                " A telepítés folytatódni fog a háttérben."
+                , "Are you sure you want to close this window? The installation is going to continue."],
+            "update-candidate" : ["Elérhető verzió:", "Candidate version:"],
+            "update-failed" : ["Hiba: {}", "Error: {}"],
+            "update-finished" : ["A frissítés sikeresen befejeződött.", "The update has successfully finished"],
+            "update-install" : ["Az új verzió telepítése...", "Installing the new version..."],
+            "update-installed" : ["Jelenlegi verzió:", "Installed version:"],
+            "update-latest" : ["A legfrissebb verzió már telepítve van", "You have the latest version installed"],
+            "update-ok-available" : ["Telepítés", "Install"],
+            "update-ok-search" : ["Frissítések keresése", "Search"],
+            "update-pass-empty" : ["Kérlek először add meg a jelszavad", "Please provide your password first"],
+            "update-pass" : ["Jelszó:", "Password:"],
+            "update-search" : ["Új verzió keresése...", "Looking for new version..."],
             "update-title" : ["A program frissítése", "Application update"],
             "version" : "v1.0.0",
             "warn-permission" : ["Hozzáférés megtagadva!", "Permission error!"],

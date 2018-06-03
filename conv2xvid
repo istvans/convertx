@@ -5,7 +5,6 @@ sys.path.append("/lib/convert-x")
 
 import cxcfg as cfg
 from cxmsg import Msg, Type
-#import cxpassword
 import cxproc as cxp
 from cxutils import eprint
 import cxwindow as cx
@@ -61,6 +60,8 @@ class Application:
             self.__stop(stay_alive=True)
         elif msg.type == Type.UPDATE_CHECK:
             self.__update_check(msg.data[0])
+        elif msg.type == Type.UPDATE_START:
+            self.__update_start(msg.data[0])
         elif msg.type == Type.UPDATE_STOP:
             self.__update_stop()
         else:
@@ -172,25 +173,37 @@ class Application:
             eprint(e)
 
     def __update_stop(self):
-        if self.__update_searcher is not None:
-            self.__update_searcher.stop()
-        if self.__updater is not None:
-            self.__updater.stop()
+        self.__update_searcher_cancelled = True
+        self.__updater_cancelled = True
 
     def __update_check(self, password):
-        self.__update_searcher = cxp.UpdateSearch(password
-                , self.__update_checked).start()
+        self.__update_searcher_cancelled = False
+        self.__update_searcher = cxp.UpdateSearch(password, self.__update_checked).start()
 
-    def __update_checked(self, cancelled, failed, prev_version, new_version):
-        if cancelled:
+    def __update_checked(self, failed, installed_version, candidate_version, last_line):
+        if self.__update_searcher_cancelled:
             return
+
         if failed:
-            self.__window_q.put(Msg(Type.UPDATE_FAILED))
+            self.__window_q.put(Msg(Type.UPDATE_FAILED, last_line))
         else:
-            if prev_version == new_version:
-                self.__window_q.put(Msg(Type.UPDATE_LATEST, prev_version))
+            if installed_version == candidate_version:
+                self.__window_q.put(Msg(Type.UPDATE_LATEST, installed_version))
             else:
-                self.__window_q.put(Msg(Type.UPDATE_AVAIL, prev_version, new_version))
+                self.__window_q.put(Msg(Type.UPDATE_AVAIL, installed_version, candidate_version))
+
+    def __update_start(self, password):
+        self.__updater_cancelled = False
+        self.__updater = cxp.UpdateInstall(password, self.__update_installed).start()
+
+    def __update_installed(self, failed, installed_version, last_line):
+        if self.__updater_cancelled:
+            return
+
+        if failed:
+            self.__window_q.put(Msg(Type.UPDATE_FAILED, last_line))
+        else:
+            self.__window_q.put(Msg(Type.UPDATE_FINISHED, installed_version))
 
 ###############################################################################
 ###############################################################################

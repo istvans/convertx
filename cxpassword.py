@@ -1,50 +1,29 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import cxpack
-from cxutils import eprint
-import json
-import os
+import random
 from simplecrypt import encrypt, decrypt
-
-###############################################################################
-__PASSWORD__ = "HangyaMaki"
-
-def __encrypt_password(password):
-    return encrypt(__PASSWORD__, password)
-
-def __decrypt_password(encrypted):
-    return decrypt(__PASSWORD__, encrypted)
+import string
 
 ###############################################################################
 
-class PasswordManager:
-    def __init__(self):
-        self.__user = os.environ["USER"]
-        if not os.path.exists(cxpack.config_dir):
-            raise RuntimeError("The config directory is missing!!!")
-        self.__password_file = os.path.join(cxpack.config_dir, "pass")
-        self.__data = {}
-        if os.path.exists(self.__password_file):
-            self.__read()
+class Password:
+    """ Store encrypted password """
+    __gem_length = 256
 
-    def save(self, password):
-        self.__data[self.__user] = __encrypt_password(password)
-        try:
-            json.dump(self.__data, open(self.__password_file, 'w'))
-        except IOError as e:
-            eprint(e)
+    def __init__(self, raw_password):
+        self.__gem = ''.join(random.SystemRandom().choice(string.ascii_uppercase
+            + string.digits) for _ in range(Password.__gem_length))
+        self.__password = None
+        self.set(raw_password)
 
-    def load(self):
-        if self.__user in self.__data:
-            return __decrypt_password(self.__data[self.__user])
-        return None
+    def __bool__(self):
+        return bool(self.__password)
 
-    def __read(self):
-        try:
-            self.__data = json.load(open(self.__password_file))
-        except IOError as e:
-            eprint(e)
+    def set(self, raw_password):
+        if raw_password:
+            self.__password = encrypt(self.__gem, raw_password)
 
-
-
-
+    def get(self):
+        if not self.__password:
+            return None
+        return decrypt(self.__gem, self.__password).decode("utf-8") 

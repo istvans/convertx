@@ -2,6 +2,7 @@
 from abc import ABC
 from cxlang import Lang, UniversalText
 from cxmsg import Msg, Type
+from cxpassword import Password
 from cxstream import StreamType
 from cxutils import eprint, AutoNumber
 import os
@@ -84,172 +85,246 @@ class Colors:
 
 class AbstractDialog(ABC):
     """ Abstract dialog window base class """
+
     ### Public Methods ###
+
     def __init__(self, parent, width, height, cfg, colors, lang
-            , title, ok_button_text=UniversalText(text="OK", single=True)):
-        self.parent = parent
-        self.cfg = cfg
-        self.colors = colors
-        self.lang = lang
+            , title, ok_button_text=UniversalText(text="OK", single=True), parent_waits=False):
+        self._parent = parent
+        self._cfg = cfg
+        self._colors = colors
+        self._lang = lang
         self.cancelled = False
-        self.completed = False
         
         if parent is None:
-            self.window = tk.Tk()
+            self._window = tk.Tk()
         else:
-            self.window = tk.Toplevel(parent)
-            self.window.transient(parent)
-            self.window.grab_set()
+            self._window = tk.Toplevel(parent)
+            self._window.transient(parent)
+            self._window.grab_set()
         
-        setup_window(self.window, self.lang.universal_text(title)
-                , self.cfg, self.__cancel)
+        setup_window(self._window, self._lang.universal_text(title)
+                , self._cfg, self.__cancel)
         
         height += 32 # for the button line
-        if self.parent is None:
-            ws = self.window.winfo_screenwidth()
-            hs = self.window.winfo_screenheight()
+        if self._parent is None:
+            ws = self._window.winfo_screenwidth()
+            hs = self._window.winfo_screenheight()
             x = (ws/2) - (width/2)
             y = (hs/2) - (height/2)
         else:
-            x = self.parent.winfo_rootx() + self.parent.winfo_width()/2 - width/2
-            y = self.parent.winfo_rooty() + self.parent.winfo_height()/2 - height/2
-        self.window.geometry("%dx%d+%d+%d" % (width, height, x, y))
+            x = self._parent.winfo_rootx() + self._parent.winfo_width()/2 - width/2
+            y = self._parent.winfo_rooty() + self._parent.winfo_height()/2 - height/2
+        self._window.geometry("%dx%d+%d+%d" % (width, height, x, y))
 
         ####################
-        self.init_body()
+        self._init_body()
         ####################
        
-        self.okb_text = tk.StringVar()
-        self.okb = tk.Button(self.window, textvariable=self.okb_text, command=self.__ok)
-        self.okb_text.set(self.lang.universal_text(ok_button_text))
-        self.okb.pack()
+        self._okb_text = tk.StringVar()
+        self._okb = tk.Button(self._window, textvariable=self._okb_text, command=self.__ok)
+        self._okb_text.set(self._lang.universal_text(ok_button_text))
+        self._okb.pack()
         
-        self.colors.set_widget(self.window)
+        self._colors.set_widget(self._window)
 
         if parent is None:
-            self.window.mainloop()
-        else:
-            self.parent.wait_window(self.window)
+            self._window.mainloop()
+        elif parent_waits: # the parent window stops until the dialog closed
+            self._parent.wait_window(self._window)
 
-    def init_body(self):
+    ### Protected Methods ###
+
+    def _init_body(self):
         """ Override me to define your window elements. """
         pass
 
-    def ok(self):
+    def _ok(self):
         """ Override me to define your OK-logic. """
         pass
 
-    def cancel(self):
+    def _cancel(self):
         """ Override me to define your cancel-logic. """
         pass
     
     ### Private Methods ###
 
     def __close_window(self):
-        self.window.withdraw()
-        self.window.destroy()
+        self._window.withdraw()
+        self._window.destroy()
 
     def __ok(self):
-        self.completed = self.ok()
-        if self.completed:
-            self.cancelled = False
+        if self._ok():
             self.__close_window()
 
     def __cancel(self):
-        self.cancel()
-        self.cancelled = True
-        self.__close_window()
+        self.cancelled = self._cancel()
+        if self.cancelled:
+            self.__close_window()
 
 ###############################################################################
 
 class LanguageSelector(AbstractDialog):
     """ Language selector dialog window """
+    
     ### Public Methods ###
+
     def __init__(self, parent, cfg, colors, lang):
         super().__init__(parent, 200, (len(lang.supp_langs) * 12), cfg, colors, lang
-                , UniversalText(text="lang-title", single=True))
+                , UniversalText(text="lang-title", single=True), parent_waits=True)
 
-    def init_body(self):
+    ### Protected Methods ###
+
+    def _init_body(self):
         self.__radio_buttons = []
         self.__selected = tk.IntVar()
         self.__selected.set(0)
-        for i, l in enumerate(self.lang.supp_langs):
-            rb = tk.Radiobutton(self.window, text=l
+        for i, l in enumerate(self._lang.supp_langs):
+            rb = tk.Radiobutton(self._window, text=l
                     , variable=self.__selected, value=i
                     , indicatoron=0)
             rb.pack()
-            if self.lang.selected is None:
+            if self._lang.selected is None:
                 if not self.__radio_buttons:
                     rb.select()
-            elif self.lang.selected == i:
+            elif self._lang.selected == i:
                 rb.select()
             self.__radio_buttons.append(rb)
     
-    def ok(self):
+    def _ok(self):
         self.__accept()
         return True
 
-    def cancel(self):
+    def _cancel(self):
         self.__accept()
+        return True
+
+    ### Private Methods ###
 
     def __accept(self):
-        self.lang.selected = self.__selected.get()
+        self._lang.selected = self.__selected.get()
 
 ###############################################################################
 
 class Update(AbstractDialog):
     """ A window to help updating the application """
+
+    ### Public Methods ###
+
     def __init__(self, parent, cfg, colors, lang, app_q):
         self.__app_q = app_q
         self.__password = tk.StringVar()
         self.__remember_pass = tk.IntVar()
-        self.__current_version = tk.StringVar()
-        self.__new_version = tk.StringVar()
+        self.__installed_version = tk.StringVar()
+        self.__candidate_version = tk.StringVar()
         self.__status = tk.StringVar()
+        self.__install = False
+        self.__installation_started = False
+        self.__installed = False
         super().__init__(parent, 300, 140, cfg, colors, lang, UniversalText("update-title")
-                , UniversalText("update-search"))
+                , UniversalText("update-ok-search"))
     
-    def init_body(self):
-        tk.Label(self.window, text="Jelszó:").pack()
-        self.__pass_entry = tk.Entry(self.window, show='*', textvariable=self.__password, width=15)
-        self.__pass_entry.pack()
-        self.__pass_rem = tk.Checkbutton(self.window, text="Jelszó megjegyzése:"
-                , variable=self.__remember_pass)
-        self.__pass_rem.pack()
-        tk.Label(self.window, text="Jelenlegi verzió:").pack()
-        tk.Label(self.window, textvariable=self.__current_version).pack()
-        tk.Label(self.window, text="Elérhető verzió:").pack()
-        tk.Label(self.window, textvariable=self.__new_version).pack()
-        tk.Label(self.window, textvariable=self.__status).pack()
+    def latest(self, installed_version):
+        if self.cancelled:
+            return
+        self.__installed_version.set(installed_version)
+        self.__candidate_version.set(installed_version)
+        self.__status.set(self._lang.text("update-latest"))
+        self.__enable()
 
-    def ok(self):
-        if not self.__password.get():
-            eprint("Password must be specified!")
-        else:
-            self.__app_q.put(Msg(Type.UPDATE_CHECK, self.__password.get()))
-            self.__status.set("Frissítés keresése...")
+    def availabe(self, installed_version, candidate_version):
+        if self.cancelled:
+            return
+        self.__installed_version.set(installed_version)
+        self.__candidate_version.set(candidate_version)
+        self.__status.set(self._lang.text("update-available"))
+        self.__install = True
+        self._okb_text.set(self._lang.text("update-ok-available"))
+        self.__enable()
+
+    def failed(self, last_line):
+        if self.cancelled:
+            return
+        self.__status.set(self._lang.text("update-failed").format(last_line))
+        self.__enable()
+
+    def finished(self, installed_version):
+        if self.cancelled:
+            return
+        self.__installed_version.set(installed_version)
+        self.__candidate_version.set(installed_version)
+        self.__status.set(self._lang.text("update-finished"))
+        self._okb_text.set(self._lang.text("OK", single=True))
+        self.__installed = True
+        self.__enable()
+
+    ### Protected Methods ###
+
+    def _init_body(self):
+        tk.Label(self._window, text=self._lang.text("update-pass")).pack()
+        self.__pass_entry = tk.Entry(self._window, show='*', textvariable=self.__password
+            , width=15)
+        self.__pass_entry.pack()
+        tk.Label(self._window, text=self._lang.text("update-installed")).pack()
+        tk.Label(self._window, textvariable=self.__installed_version).pack()
+        tk.Label(self._window, text=self._lang.text("update-candidate")).pack()
+        tk.Label(self._window, textvariable=self.__candidate_version).pack()
+        tk.Label(self._window, textvariable=self.__status).pack()
+
+        self.__pass_entry.focus()
+        self.__bind_enter_key()
+
+    def _ok(self, *args):
+        if self.__installed:
+            return True
+
+        encrypted_password = Password(self.__password.get())
+        if not encrypted_password:
+            self.__status.set(self._lang.text("update-pass-empty"))
+        elif not self.__install:
+            self.__status.set(self._lang.text("update-search"))
             self.__disable()
-            #self.okb_text.set("Frissítés telepítése")
+            self.__app_q.put(Msg(Type.UPDATE_CHECK, encrypted_password))
+        elif self.__install:
+            self.__installation_started = True
+            self.__status.set(self._lang.text("update-install"))
+            self.__disable()
+            self.__app_q.put(Msg(Type.UPDATE_START, encrypted_password))
         return False
 
-    def cancel(self):
+    def _cancel(self):
+        if self.__installation_started:
+            if not messagebox.askyesno(self._lang.text("update-cancel-install-title")
+                , self._lang.text("update-cancel-install")):
+                return False
+        elif not messagebox.askyesno(self._lang.text("update-cancel-title")
+            , self._lang.text("update-cancel")):
+            return False
         self.__app_q.put(Msg(Type.UPDATE_STOP))
+        return True
+
+    ### Private Methods ###
+
+    def __bind_enter_key(self):
+        self.__pass_entry.bind('<Return>', self._ok)
 
     def __disable(self):
-        self.okb["state"] = tk.DISABLED
+        self._okb["state"] = tk.DISABLED
         self.__pass_entry["state"] = tk.DISABLED
-        self.__pass_rem["state"] = tk.DISABLED
+        self.__pass_entry.unbind('<Return>')
 
     def __enable(self):
-        self.okb["state"] = tk.NORMAL
+        self._okb["state"] = tk.NORMAL
         self.__pass_entry["state"] = tk.NORMAL
-        self.__pass_rem["state"] = tk.NORMAL
+        self.__bind_enter_key()
 
 ###############################################################################
 
 class Config(AbstractDialog):
     """ Configuration dialog window """
+    
     ### Public Methods ###
+    
     def __init__(self, parent, cfg, colors, lang, streams):
         self.__streams = streams
         width = 200 if self.__streams.streams else 600
@@ -257,7 +332,9 @@ class Config(AbstractDialog):
         super().__init__(parent, width, height, cfg, colors, lang
                 , UniversalText("config-title"))
 
-    def init_body(self):
+    ### Protected Methods ###
+
+    def _init_body(self):
         self.__check_boxes = []
         if not self.__streams.streams:
             tk.Label(self.window, text=self.lang.text("no-streams")).pack()
@@ -272,7 +349,7 @@ class Config(AbstractDialog):
                 cb.pack()
                 self.__check_boxes.append(cb)
 
-    def ok(self):
+    def _ok(self):
         for i, cs in enumerate(self.__check_boxes):
             self.__streams.streams[i].enabled = True if cs.selected.get() else False
         return True
@@ -280,7 +357,9 @@ class Config(AbstractDialog):
 ###############################################################################
 
 class ReadOnlyEntry(tk.Entry):
+    
     ### Public Methods ###
+    
     def __init__(self, master, name=None, translate=True, change_cb=None
             , text=None, **kw):
         super().__init__(master, **kw)
@@ -387,7 +466,9 @@ class ConversionFailedState(ReadyState):
         self.clear_error_msg = False
 
 class WindowStateMachine:
+    
     ### Public Methods ###
+    
     def __init__(self, menu_items, menu, dirb, openb, open_settingsb, saveb
             , save_delb, startb, stopb, progressbar, elapsede, lefte, set_state):
         self.__menu_items = menu_items
@@ -497,7 +578,9 @@ class WindowStateMachine:
 
 class Window:
     """ A GUI window running on its own-thread """
+    
     ### Public Methods ###
+    
     def __init__(self, window_queue, app_queue, cfg):
         self.__window_q = window_queue
         self.__app_q = app_queue
@@ -508,6 +591,7 @@ class Window:
         
         self.__window = None
         self.__logo_canvas = None
+        self.__updater = None
         
         self.__lang = Lang(self.__cfg)
         if self.__lang.selected is None:
@@ -580,6 +664,18 @@ class Window:
                 self.__progressbar.step(msg.data[0])
             elif msg.type == Type.STOP_ACK:
                 self.__state_machine.notify(WindowEvent.STOP)
+            elif msg.type == Type.UPDATE_FAILED:
+                if self.__updater is not None:
+                    self.__updater.failed(msg.data[0])
+            elif msg.type == Type.UPDATE_AVAIL:
+                if self.__updater is not None:
+                    self.__updater.availabe(msg.data[0], msg.data[1])
+            elif msg.type == Type.UPDATE_LATEST:
+                if self.__updater is not None:
+                    self.__updater.latest(msg.data[0])
+            elif msg.type == Type.UPDATE_FINISHED:
+                if self.__updater is not None:
+                    self.__updater.finished(msg.data[0])
             elif msg.type == Type.WARN_PERMISSION_ERROR:
                 self.__state_machine.notify(WindowEvent.INPUT_PERMISSION_ERROR)
             elif msg.type == Type.WARN_UNKNOWN_REMAINING_TIME:
@@ -600,7 +696,7 @@ class Window:
         LanguageSelector(self.__window, self.__cfg, self.__colors
                 , self.__lang)
         if self.__lang.selected is None:
-            raise RuntimeError("INTERNAL ERROR: lidx is None!")
+            raise RuntimeError("INTERNAL ERROR: There is no selected language!")
         self.__app_q.put(Msg(Type.SET_CFG, "lang", self.__lang.selected))
 
         if prev_selected != self.__lang.selected:
@@ -879,5 +975,6 @@ class Window:
         return error_text
 
     def __update(self):
-        Update(self.__window, self.__cfg, self.__colors, self.__lang, self.__app_q)
+        self.__updater = Update(self.__window, self.__cfg, self.__colors, self.__lang
+            , self.__app_q)
     
