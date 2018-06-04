@@ -20,7 +20,6 @@ class AbstractReadOnlyLongCommand(ABC):
         """ Initialise but do not start the command yet """
         self.__command = command
         self.__start_time = None
-        print("Command: '{}'".format(self.__command))
         self._process = None
         self._progress_thread = th.Thread(target=self.__read_next_line)
         self._cancelled = False
@@ -31,9 +30,8 @@ class AbstractReadOnlyLongCommand(ABC):
         if self._prestart():
             self.__start_time = time.time()
             split_command = shlex.split(self.__command)
-            print("Split command: {}".format(split_command))
             self._process = subprocess.Popen(split_command
-                    , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+                    , stdout=subprocess.PIPE, stderr=subprocess.STDOUT
                     , universal_newlines=True)
             self._progress_thread.start()
     
@@ -73,14 +71,12 @@ class AbstractReadOnlyLongCommand(ABC):
                 self._process.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 self._process.kill()
-            print("Process {} was terminated".format(self._process))
             self._process = None
 
     def __read_next_line(self):
         for raw_line in iter(self._process.stdout.readline, ""):
             elapsed = time.time() - self.__start_time
             self._last_line = raw_line.rstrip()
-            print("READ: '{}'".format(self._last_line))
             if self._cancelled:
                 break
             if not self._progress(self._last_line, elapsed):
@@ -254,7 +250,7 @@ class AbstractReadWriteShortCommand(ABC):
 
     def _gen_password_events(self, password):
         password_answer = "{}\n".format(password.get())
-        return {"[pP]assword":password_answer, "[jJ]elszava":password_answer}
+        return {"[pP]assword.*:":password_answer, "[jJ]elsz.*:":password_answer}
 
 class UpdateDownloader(AbstractReadWriteShortCommand):
     def __init__(self, password):
@@ -281,7 +277,7 @@ class UpdateSearch:
         self.__finished_cb = finished_cb
         self.__download = UpdateDownloader(password)
         self.__check = UpdateVersionChecker(password)
-        self.__run_thread = th.Thread(target=self.__process)
+        self.__run_thread = th.Thread(target=self._process)
         self.__installed_version = None
         self.__candidate_version = None
 
@@ -296,7 +292,7 @@ class UpdateSearch:
         if installed and candidate:
             self.__installed_version = installed.group(1)
             self.__candidate_version = candidate.group(1)
-        self.__finish()
+        self._finish()
 
     def _finish(self):
         if self.__finished_cb is not None:
@@ -316,7 +312,7 @@ class UpdateInstall:
         self.__finished_cb = finished_cb
         self.__install = UpdateInstaller(password)
         self.__check = UpdateVersionChecker(password)
-        self.__run_thread = th.Thread(target=self.__process)
+        self.__run_thread = th.Thread(target=self._process)
         self.__installed_version = None
         self.__candidate_version = None
         self.__result = None
@@ -332,7 +328,7 @@ class UpdateInstall:
         if installed and candidate:
             self.__installed_version = installed.group(1)
             self.__candidate_version = candidate.group(1)
-        self.__finish()
+        self._finish()
 
     def _finish(self):
         if self.__finished_cb is not None:
