@@ -1,3 +1,11 @@
+convert-x (1.0.0) xenial; urgency=medium
+
+  * major refactoring
+  * new feature: stream selection
+  * new feature: built-in update dialog
+
+ -- István Siroki <stevesiroki@gmail.com>  Mon, 04 Jun 2018 00:44:08 +0100
+
 convert-x (0.0.4) xenial; urgency=medium
 
   * more generic way to get number of frames by introducing preparation

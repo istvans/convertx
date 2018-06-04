@@ -5,7 +5,6 @@ import cxpack
 from cxstream import Stream, Streams
 import pexpect as pe
 import re
-import shlex
 import subprocess
 import threading as th
 import time
@@ -33,9 +32,7 @@ class AbstractReadOnlyLongCommand(ABC):
         """ Start the command and its monitoring in the progress thead """
         if self.prestart():
             self.__start_time = time.time()
-            split_command = shlex.split(self.__command)
-            print("Split command: {}".format(split_command))
-            self.process = subprocess.Popen(split_command
+            self.process = subprocess.Popen(self.__command.split()
                     , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
                     , universal_newlines=True)
             self.progress_thread.start()

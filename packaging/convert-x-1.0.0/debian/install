@@ -1,4 +1,13 @@
 src/XviD.ico etc/convert-x
 src/XviD_logo.png etc/convert-x
 src/conv2xvid usr/bin
-src/setup lib/convert-x
+src/environment lib/convert-x
+src/cxcfg.py lib/convert-x
+src/cxlang.py lib/convert-x
+src/cxmsg.py lib/convert-x
+src/cxpack.py lib/convert-x
+src/cxpassword.py lib/convert-x
+src/cxproc.py lib/convert-x
+src/cxstream.py lib/convert-x
+src/cxutils.py lib/convert-x
+src/cxwindow.py lib/convert-x

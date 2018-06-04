@@ -18,7 +18,7 @@ $ sudo add-apt-repository ppa:isiroki/convert-x && sudo apt-get update && sudo a
 
 ## Applications
 
-### Conv2XviD 1.0
+### Conv2XviD 1.0.0
 
 Convert from any format supported by `ffmpeg` to XviD.
 

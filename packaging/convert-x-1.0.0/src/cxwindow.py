@@ -337,12 +337,12 @@ class Config(AbstractDialog):
     def _init_body(self):
         self.__check_boxes = []
         if not self.__streams.streams:
-            tk.Label(self._window, text=self._lang.text("no-streams")).pack()
+            tk.Label(self.window, text=self.lang.text("no-streams")).pack()
         else:
             for i, s in enumerate(self.__streams.streams):
                 var = tk.IntVar()
-                cb = tk.Checkbutton(self._window, anchor="w"
-                        , text="{} {} {}".format(s.id, self._lang.text(s.type.name), s.lang)
+                cb = tk.Checkbutton(self.window, anchor="w"
+                        , text="{} {} {}".format(s.id, self.lang.text(s.type.name), s.lang)
                         , variable=var, state=tk.DISABLED if s.type == StreamType.VIDEO else tk.NORMAL)
                 cb.selected = var
                 cb.selected.set(1 if s.enabled else 0)

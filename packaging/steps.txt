@@ -20,7 +20,7 @@ $ dch
 build deb file:
 $ debuild -S -k3BC494EE
 upload:
-dput ppa:isiroki/convert-x <source.changes>
+$ dput ppa:isiroki/convert-x <source.changes>
 
   644  vim README.Debian 
   645  vim README.source 
