@@ -25,6 +25,7 @@ Simple GUI wrapper around `ffmpeg` to convert videos from any supported format t
 #### Features
 
 * Stream selection
+* Subtitle extraction into `srt` files
 * Progress bar
 * Built-in updater
 * Language selector

@@ -13,74 +13,81 @@ import time
 ###############################################################################
 
 class AbstractReadOnlyLongCommand(ABC):
+    
+    ### Public Methods ###
+
     def __init__(self, command):
         """ Initialise but do not start the command yet """
         self.__command = command
         self.__start_time = None
         print("Command: '{}'".format(self.__command))
-        self.process = None
-        self.progress_thread = th.Thread(target=self.__read_next_line)
-        self.cancelled = False
-        self.last_line = None
+        self._process = None
+        self._progress_thread = th.Thread(target=self.__read_next_line)
+        self._cancelled = False
+        self._last_line = None
+
+    def start(self):
+        """ Start the command and its monitoring in the progress thead """
+        if self._prestart():
+            self.__start_time = time.time()
+            split_command = shlex.split(self.__command)
+            print("Split command: {}".format(split_command))
+            self._process = subprocess.Popen(split_command
+                    , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+                    , universal_newlines=True)
+            self._progress_thread.start()
     
-    def prestart(self):
+    def stop(self):
+        self._cancelled = True
+        self.__terminate()
+
+    ### Protected Methods ###
+
+    def _prestart(self):
         """ Override to act right before starting the command
         Return false to cancel start
         """
         return True
 
-    def start(self):
-        """ Start the command and its monitoring in the progress thead """
-        if self.prestart():
-            self.__start_time = time.time()
-            split_command = shlex.split(self.__command)
-            print("Split command: {}".format(split_command))
-            self.process = subprocess.Popen(split_command
-                    , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-                    , universal_newlines=True)
-            self.progress_thread.start()
-
-    def progress(self, line, elapsed_seconds):
+    def _progress(self, line, elapsed_seconds):
         """ Override to process the next line on the command's combined
         stdout & stderr
         Return false to break the progress loop
         """
         return True
-    
-    def stop(self):
-        self.cancelled = True
-        self.__terminate()
 
-    def finish(self):
+    def _finish(self):
         """ Override to act upon finished processing
-        You might want to specify behaviour based on the value of self.cancelled
-        self.last_line stores the command's last output line
+        You might want to specify behaviour based on the value of self._cancelled
+        self._last_line stores the command's last output line
         """
         pass
 
+    ### Private Methods ###
+
     def __terminate(self):
         """ Terminate the command """
-        if self.process is not None:
-            self.process.terminate()
+        if self._process is not None:
+            self._process.terminate()
             try:
-                self.process.wait(timeout=15)
+                self._process.wait(timeout=15)
             except subprocess.TimeoutExpired:
-                self.process.kill()
-            print("Process {} was terminated".format(self.process))
-            self.process = None
+                self._process.kill()
+            print("Process {} was terminated".format(self._process))
+            self._process = None
 
     def __read_next_line(self):
-        for raw_line in iter(self.process.stdout.readline, ""):
+        for raw_line in iter(self._process.stdout.readline, ""):
             elapsed = time.time() - self.__start_time
-            self.last_line = raw_line.rstrip()
-            print("READ: '{}'".format(self.last_line))
-            if self.cancelled:
+            self._last_line = raw_line.rstrip()
+            print("READ: '{}'".format(self._last_line))
+            if self._cancelled:
                 break
-            if not self.progress(self.last_line, elapsed):
+            if not self._progress(self._last_line, elapsed):
                 self.__terminate()
                 break
-        self.process = None
-        self.finish()
+        self._process = None
+        self._finish()
 
 class VideoParserCommand(AbstractReadOnlyLongCommand):
     def __init__(self, input_file, finished_cb):
@@ -102,7 +109,7 @@ class VideoParserCommand(AbstractReadOnlyLongCommand):
         self.permission_error = False
         self.finished = False
     
-    def progress(self, line, elapsed_seconds):
+    def _progress(self, line, elapsed_seconds):
         if re.search("Permission denied", line):
             self.permission_error = True
             return False
@@ -131,8 +138,8 @@ class VideoParserCommand(AbstractReadOnlyLongCommand):
         
         return True
     
-    def finish(self):
-        if not self.cancelled:
+    def _finish(self):
+        if not self._cancelled:
             self.finished = True
             if self.__last_match:
                 self.num_of_frames = int(self.__last_match.group(1))
@@ -161,11 +168,11 @@ class SubtitleExtractorCommand(AbstractReadOnlyLongCommand):
         self.__subtitle = subtitle
         self.__finished_cb = finished_cb
     
-    def finish(self):
+    def _finish(self):
         if self.__finished_cb is not None:
-            self.failed = True if self.last_line is None or\
-                    not re.search("^\s*video:", self.last_line) else False
-            self.__finished_cb(self.__subtitle, self.failed, self.last_line)
+            failed = True if self._last_line is None or\
+                    not re.search("^\s*video:", self._last_line) else False
+            self.__finished_cb(self.__subtitle, failed, self._last_line)
 
 class ConverterCommand(AbstractReadOnlyLongCommand):
     """ Converter command """
@@ -194,9 +201,8 @@ class ConverterCommand(AbstractReadOnlyLongCommand):
         self.__elapsed_cb = elapsed_cb
         self.__left_cb = left_cb
         self.__finished_cb = finished_cb
-        self.failed = False
 
-    def progress(self, line, elapsed_seconds):
+    def _progress(self, line, elapsed_seconds):
         """ Monitor the progress of the conversion and report it """
         if self.__num_of_frames is not None and self.__one_percent is not None\
                 and self.__step_cb is not None and self.__elapsed_cb is not None\
@@ -220,11 +226,11 @@ class ConverterCommand(AbstractReadOnlyLongCommand):
                 self.__left_cb(estimated_left_time)
         return True
 
-    def finish(self):
+    def _finish(self):
         if self.__finished_cb is not None:
-            self.failed = True if self.last_line is None or\
-                    not re.search("^\s*video:", self.last_line) else False
-            self.__finished_cb(self.cancelled, self.failed, self.last_line)
+            failed = True if self._last_line is None or\
+                    not re.search("^\s*video:", self._last_line) else False
+            self.__finished_cb(self._cancelled, failed, self._last_line)
 
 ###############################################################################
 ###############################################################################
@@ -276,14 +282,13 @@ class UpdateSearch:
         self.__download = UpdateDownloader(password)
         self.__check = UpdateVersionChecker(password)
         self.__run_thread = th.Thread(target=self.__process)
-        self._failed = False
         self.__installed_version = None
         self.__candidate_version = None
 
     def start(self):
         self.__run_thread.start()
 
-    def __process(self):
+    def _process(self):
         self.__download.run()
         self.__versions_text = self.__check.run()
         installed = re.search("(Installed|Telepítve):\s*(\S+)", self.__versions_text)
@@ -293,16 +298,16 @@ class UpdateSearch:
             self.__candidate_version = candidate.group(1)
         self.__finish()
 
-    def __finish(self):
+    def _finish(self):
         if self.__finished_cb is not None:
-            self._failed = True if self.__versions_text is None or self.__installed_version is None or\
+            failed = True if self.__versions_text is None or self.__installed_version is None or\
                     self.__candidate_version is None else False
 
             last_line = None
             if self.__versions_text is not None:
                 last_line = self.__versions_text.splitlines()[-1]
 
-            self.__finished_cb(self._failed, self.__installed_version, self.__candidate_version, last_line)
+            self.__finished_cb(failed, self.__installed_version, self.__candidate_version, last_line)
 
 ################################################################################
 
@@ -312,7 +317,6 @@ class UpdateInstall:
         self.__install = UpdateInstaller(password)
         self.__check = UpdateVersionChecker(password)
         self.__run_thread = th.Thread(target=self.__process)
-        self._failed = False
         self.__installed_version = None
         self.__candidate_version = None
         self.__result = None
@@ -320,7 +324,7 @@ class UpdateInstall:
     def start(self):
         self.__run_thread.start()
 
-    def __process(self):
+    def _process(self):
         self.__result = self.__install.run()
         versions_text = self.__check.run()
         installed = re.search("(Installed|Telepítve):\s*(\S+)", versions_text)
@@ -330,9 +334,9 @@ class UpdateInstall:
             self.__candidate_version = candidate.group(1)
         self.__finish()
 
-    def __finish(self):
+    def _finish(self):
         if self.__finished_cb is not None:
-            self._failed = True if self.__result is None or self.__installed_version is None or\
+            failed = True if self.__result is None or self.__installed_version is None or\
                 self.__candidate_version is None or\
                 self.__installed_version != self.__candidate_version else False
 
@@ -340,4 +344,4 @@ class UpdateInstall:
             if self.__result is not None:
                 last_line = self.__result.splitlines()[-1]
 
-            self.__finished_cb(self._failed, self.__installed_version, last_line)
+            self.__finished_cb(failed, self.__installed_version, last_line)
