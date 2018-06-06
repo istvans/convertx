@@ -9,13 +9,16 @@ $ gpg --send-keys --keyserver keyserver.ubuntu.com 3BC494EE
 $ sudo gpg -ao /etc/keys/pub.key --export 3BC494EE
 $ sudo gpg -ao /etc/keys/private.key --export-secret-keys 3BC494EE
 then to recover the key:
-$ sudo cd /etc/keys
-$ gpg --import private.key
-$ gpg --import pub.key
+$ cd /etc/keys
+$ sudo gpg --import private.key
+$ sudo gpg --import pub.key
 
+prerequisites:
+$ sudo apt-get install devscripts dh-make dput
 create compressed orig package(?):
 $ tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
 changelog:
+$ cd convert-x-0.0.2
 $ dch
 build deb file:
 $ debuild -S -k3BC494EE

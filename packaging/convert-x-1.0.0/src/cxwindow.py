@@ -141,11 +141,11 @@ class AbstractDialog(ABC):
 
     def _ok(self):
         """ Override me to define your OK-logic. """
-        pass
+        return True
 
     def _cancel(self):
         """ Override me to define your cancel-logic. """
-        pass
+        return True
     
     ### Private Methods ###
 
@@ -282,13 +282,13 @@ class Update(AbstractDialog):
         if not encrypted_password:
             self.__status.set(self._lang.text("update-pass-empty"))
         elif not self.__install:
-            self.__status.set(self._lang.text("update-search"))
             self.__disable()
+            self.__status.set(self._lang.text("update-search"))
             self.__app_q.put(Msg(Type.UPDATE_CHECK, encrypted_password))
         elif self.__install:
             self.__installation_started = True
-            self.__status.set(self._lang.text("update-install"))
             self.__disable()
+            self.__status.set(self._lang.text("update-install"))
             self.__app_q.put(Msg(Type.UPDATE_START, encrypted_password))
         return False
 
@@ -337,12 +337,12 @@ class Config(AbstractDialog):
     def _init_body(self):
         self.__check_boxes = []
         if not self.__streams.streams:
-            tk.Label(self.window, text=self.lang.text("no-streams")).pack()
+            tk.Label(self._window, text=self._lang.text("no-streams")).pack()
         else:
             for i, s in enumerate(self.__streams.streams):
                 var = tk.IntVar()
-                cb = tk.Checkbutton(self.window, anchor="w"
-                        , text="{} {} {}".format(s.id, self.lang.text(s.type.name), s.lang)
+                cb = tk.Checkbutton(self._window, anchor="w"
+                        , text="{} {} {}".format(s.id, self._lang.text(s.type.name), s.lang)
                         , variable=var, state=tk.DISABLED if s.type == StreamType.VIDEO else tk.NORMAL)
                 cb.selected = var
                 cb.selected.set(1 if s.enabled else 0)
@@ -424,7 +424,6 @@ class InitState(DisabledState):
         self.menu = tk.NORMAL
         self.dir = tk.NORMAL
         self.openb = tk.NORMAL
-        self.reset_progress = True
 
 class ProgressState(DisabledState, ABC):
     def __init__(self):
@@ -450,6 +449,7 @@ class ReadyState(InputAvailableState):
 class ConversionState(ProgressState):
     def __init__(self):
         super().__init__()
+        self.reset_progress = True
 
 class OutputDeletedState(ReadyState):
     def __init__(self):
@@ -506,6 +506,7 @@ class WindowStateMachine:
                     self.__progressbar.step(amount=(-1 * pb_value))
                 self.__elapsede.set_text()
                 self.__lefte.set_text()
+                self.__state.reset_progress = False
             for i in range(len(self.__menu_items)):
                 self.__menu.entryconfigure((i+1), state=self.__state.menu)
             self.__dirb["state"] = self.__state.dir

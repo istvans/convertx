@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import random
 from simplecrypt import encrypt, decrypt

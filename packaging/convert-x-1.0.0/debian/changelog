@@ -1,10 +1,11 @@
 convert-x (1.0.0) xenial; urgency=medium
 
-  * major refactoring
+  * major refactoring to improve thread-safety and stability
   * new feature: stream selection
-  * new feature: built-in update dialog
+  * new feature: subtitle extraction
+  * new feature: built-in updater
 
- -- István Siroki <stevesiroki@gmail.com>  Mon, 04 Jun 2018 00:44:08 +0100
+ -- István Siroki <stevesiroki@gmail.com>  Wed, 06 Jun 2018 00:21:54 +0100
 
 convert-x (0.0.4) xenial; urgency=medium
 

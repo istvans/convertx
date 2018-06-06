@@ -1,9 +1,0 @@
-#!/bin/bash
-
-. /lib/convert-x/environment 2>/dev/null
-
-if [ $? ]; then
-    rm -rf $icon_file
-fi
-
-#DEBHELPER#
