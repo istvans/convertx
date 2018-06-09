@@ -13,6 +13,7 @@ then to recover the key:
 $ cd /etc/keys
 $ gpg --import private.key
 $ gpg --import pub.key
+$ gpg --edit-key $USER trust
 
 how to deactivate and create your new key:
 $ # deactivate on launchpad.net/~isiroki

@@ -301,7 +301,6 @@ class AbstractUpdate(ABC):
             last_line = None
             if self._result is not None:
                 last_line = self._result.splitlines()[-1]
-                print("'{}' '{}'".format(self._result, last_line))
             self._finish(last_line)
     
 ################################################################################

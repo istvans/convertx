@@ -5,7 +5,7 @@ convert-x (1.0.0) xenial; urgency=medium
   * new feature: subtitle extraction
   * new feature: built-in updater
 
- -- István Siroki (Steve) <stevesiroki@gmail.com>  Sat, 09 Jun 2018 01:33:19 +0100
+ -- István Siroki (Steve) <stevesiroki@gmail.com>  Sat, 09 Jun 2018 03:08:22 +0100
 
 convert-x (0.0.4) xenial; urgency=medium
 

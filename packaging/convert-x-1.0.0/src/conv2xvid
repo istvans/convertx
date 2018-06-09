@@ -18,7 +18,6 @@ class Application:
     ### Public Methods ###
     def __init__(self):
         self.__cfg = cfg.ConfigManager()
-        #self.__pass_manager = cxpassword.PasswordManager()
         self.__window_q = Queue()
         self.__app_q = Queue()
         self.__window = cx.Window(window_queue=self.__window_q

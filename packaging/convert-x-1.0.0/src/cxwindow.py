@@ -255,6 +255,8 @@ class Update(AbstractDialog):
         self.__candidate_version.set(installed_version)
         self.__status.set(self._lang.text("update-finished"))
         self._okb_text.set(self._lang.text("OK", single=True))
+        self.__installation_started = False
+        self.__install = False
         self.__installed = True
         self.__enable()
 
@@ -277,29 +279,33 @@ class Update(AbstractDialog):
     def _ok(self, *args):
         if self.__installed:
             return True
-
-        encrypted_password = Password(self.__password.get())
-        if not encrypted_password:
+            
+        if not self.__password.get():
             self.__status.set(self._lang.text("update-pass-empty"))
+            self.__enable()
         elif not self.__install:
             self.__disable()
             self.__status.set(self._lang.text("update-search"))
-            self.__app_q.put(Msg(Type.UPDATE_CHECK, encrypted_password))
+            th.Thread(target=self.__encrypted_sender
+                    , args=(Type.UPDATE_CHECK, self.__password.get())).start()
         elif self.__install:
-            self.__installation_started = True
             self.__disable()
+            self.__installation_started = True
             self.__status.set(self._lang.text("update-install"))
-            self.__app_q.put(Msg(Type.UPDATE_START, encrypted_password))
+            th.Thread(target=self.__encrypted_sender
+                    , args=(Type.UPDATE_START, self.__password.get())).start()
+
         return False
 
     def _cancel(self):
         if self.__installation_started:
             if not messagebox.askyesno(self._lang.text("update-cancel-install-title")
-                , self._lang.text("update-cancel-install")):
+                    , self._lang.text("update-cancel-install")):
                 return False
-        elif not messagebox.askyesno(self._lang.text("update-cancel-title")
-            , self._lang.text("update-cancel")):
-            return False
+        elif self.__install:
+            if not messagebox.askyesno(self._lang.text("update-cancel-title")
+                    , self._lang.text("update-cancel")):
+                return False
         self.__app_q.put(Msg(Type.UPDATE_STOP))
         return True
 
@@ -317,6 +323,10 @@ class Update(AbstractDialog):
         self._okb["state"] = tk.NORMAL
         self.__pass_entry["state"] = tk.NORMAL
         self.__bind_enter_key()
+    
+    def __encrypted_sender(self, msg_type, raw_password):
+        encrypted_password = Password(raw_password)
+        self.__app_q.put(Msg(msg_type, encrypted_password))
 
 ###############################################################################
 
