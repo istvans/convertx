@@ -24,22 +24,16 @@ $ Comment
 $ pass phrase, generate and record
 $ follow steps above
 
-convert-x (1.0.0) xenial; urgency=medium
-
-  * major refactoring to improve thread-safety and stability
-  * new feature: stream selection
-  * new feature: subtitle extraction
-  * new feature: built-in updater
-
 prerequisites:
 $ sudo apt-get install devscripts dh-make dput
 create compressed orig package(?):
-$ tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
+$ tar czf convert-x_1.0.0.orig.tar.gz convert-x-1.0.0
 changelog:
 $ cd convert-x-0.0.2
 $ dch
 build signed deb and source.changes:
 $ debuild
+$ debuild -S -k$GPGKEY
 upload:
 $ dput ppa:isiroki/convert-x <source.changes>
 
