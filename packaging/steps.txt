@@ -32,9 +32,10 @@ $ tar czf convert-x_1.0.0.orig.tar.gz convert-x-1.0.0
 changelog:
 $ cd convert-x-0.0.2
 $ dch
-build signed deb and source.changes:
+build signed deb for local testing:
 $ debuild
-$ debuild -S -k$GPGKEY
+build source changes for upload:
+$ debuild -S
 upload:
 $ dput ppa:isiroki/convert-x <source.changes>
 
