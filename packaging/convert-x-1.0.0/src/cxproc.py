@@ -270,73 +270,81 @@ class UpdateInstaller(AbstractReadWriteShortCommand):
             , events=expected_events)
 
 ################################################################################
+################################################################################
 
-class UpdateSearch:
+class AbstractUpdate(ABC):
+    _installed_regex = "(?:Installed|Telepítve):\s*(\S+)"
+    _candidate_regex = "(?:Candidate|Jelölt):\s*(\S+)"
+    
     def __init__(self, password, finished_cb):
-        self.__finished_cb = finished_cb
+        self._finished_cb = finished_cb
+        self._run_thread = th.Thread(target=self.__process)
+        self._installed_version = None
+        self._candidate_version = None
+        self._result = None
+    
+    def start(self):
+        self._run_thread.start()
+    
+    def _process(self):
+        pass
+    
+    def _finish(self, last_line):
+        pass
+    
+    def __process(self):
+        self._process()
+        self.__finish()
+    
+    def __finish(self):
+        if self._finished_cb is not None:
+            last_line = None
+            if self._result is not None:
+                last_line = self._result.splitlines()[-1]
+                print("'{}' '{}'".format(self._result, last_line))
+            self._finish(last_line)
+    
+################################################################################
+
+class UpdateSearch(AbstractUpdate):
+    def __init__(self, password, finished_cb):
+        super().__init__(password, finished_cb)
         self.__download = UpdateDownloader(password)
         self.__check = UpdateVersionChecker(password)
-        self.__run_thread = th.Thread(target=self._process)
-        self.__installed_version = None
-        self.__candidate_version = None
-
-    def start(self):
-        self.__run_thread.start()
 
     def _process(self):
         self.__download.run()
-        self.__versions_text = self.__check.run()
-        installed = re.search("(Installed|Telepítve):\s*(\S+)", self.__versions_text)
-        candidate = re.search("(Candidate|Jelölt):\s*(\S+)", self.__versions_text)
+        self._result = self.__check.run()
+        installed = re.search(AbstractUpdate._installed_regex, self._result)
+        candidate = re.search(AbstractUpdate._candidate_regex, self._result)
         if installed and candidate:
-            self.__installed_version = installed.group(1)
-            self.__candidate_version = candidate.group(1)
-        self._finish()
+            self._installed_version = installed.group(1)
+            self._candidate_version = candidate.group(1)
 
-    def _finish(self):
-        if self.__finished_cb is not None:
-            failed = True if self.__versions_text is None or self.__installed_version is None or\
-                    self.__candidate_version is None else False
-
-            last_line = None
-            if self.__versions_text is not None:
-                last_line = self.__versions_text.splitlines()[-1]
-
-            self.__finished_cb(failed, self.__installed_version, self.__candidate_version, last_line)
+    def _finish(self, last_line):
+        failed = True if self._result is None or self._installed_version is None or\
+                self._candidate_version is None else False
+        self._finished_cb(failed, self._installed_version, self._candidate_version, last_line)
 
 ################################################################################
 
-class UpdateInstall:
+class UpdateInstall(AbstractUpdate):
     def __init__(self, password, finished_cb):
-        self.__finished_cb = finished_cb
+        super().__init__(password, finished_cb)
         self.__install = UpdateInstaller(password)
         self.__check = UpdateVersionChecker(password)
-        self.__run_thread = th.Thread(target=self._process)
-        self.__installed_version = None
-        self.__candidate_version = None
-        self.__result = None
-
-    def start(self):
-        self.__run_thread.start()
 
     def _process(self):
-        self.__result = self.__install.run()
+        self._result = self.__install.run()
         versions_text = self.__check.run()
-        installed = re.search("(Installed|Telepítve):\s*(\S+)", versions_text)
-        candidate = re.search("(Candidate|Jelölt):\s*(\S+)", versions_text)
+        installed = re.search(AbstractUpdate._installed_regex, versions_text)
+        candidate = re.search(AbstractUpdate._candidate_regex, versions_text)
         if installed and candidate:
-            self.__installed_version = installed.group(1)
-            self.__candidate_version = candidate.group(1)
-        self._finish()
+            self._installed_version = installed.group(1)
+            self._candidate_version = candidate.group(1)
 
-    def _finish(self):
-        if self.__finished_cb is not None:
-            failed = True if self.__result is None or self.__installed_version is None or\
-                self.__candidate_version is None or\
-                self.__installed_version != self.__candidate_version else False
-
-            last_line = None
-            if self.__result is not None:
-                last_line = self.__result.splitlines()[-1]
-
-            self.__finished_cb(failed, self.__installed_version, last_line)
+    def _finish(self, last_line):
+        failed = True if self._result is None or self._installed_version is None or\
+            self._candidate_version is None or\
+            self._installed_version != self._candidate_version else False
+        self._finished_cb(failed, self._installed_version, last_line)

@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-pip3 install --upgrade simple-crypt pexpect
+pip3 install --upgrade simple-crypt pexpect 2>/dev/null
 
 . /lib/convert-x/environment
 

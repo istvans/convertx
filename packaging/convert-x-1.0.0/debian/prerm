@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-pip3 uninstall simple-crypt pexpect
+pip3 uninstall -y simple-crypt pexpect 2>/dev/null
 
 . /lib/convert-x/environment
 

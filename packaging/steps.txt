@@ -1,17 +1,35 @@
 setup:
-$ export DEBEMAIL="István Siroki <stevesiroki@gmail.com>"
+$ export DEBEMAIL="István Siroki (Steve) <stevesiroki@gmail.com>"
 
 how to recover the missing gpg key:
 1st: create a key then backup!!!
 $ gpg --gen-key
-$ export GPGKEY=3BC494EE
-$ gpg --send-keys --keyserver keyserver.ubuntu.com 3BC494EE
-$ sudo gpg -ao /etc/keys/pub.key --export 3BC494EE
-$ sudo gpg -ao /etc/keys/private.key --export-secret-keys 3BC494EE
+$ export GPGKEY=5FB7C5AA
+$ gpg --send-keys --keyserver keyserver.ubuntu.com $GPGKEY
+$ gpg -ao .pub.key --export $GPGKEY
+$ gpg -ao .private.key --export-secret-keys $GPGKEY
+$ gpg --decrypt pgp_message
 then to recover the key:
 $ cd /etc/keys
-$ sudo gpg --import private.key
-$ sudo gpg --import pub.key
+$ gpg --import private.key
+$ gpg --import pub.key
+
+how to deactivate and create your new key:
+$ # deactivate on launchpad.net/~isiroki
+$ gpg --gen-key
+$  choose default, default, default and y
+$ Name
+$ E-mail
+$ Comment
+$ pass phrase, generate and record
+$ follow steps above
+
+convert-x (1.0.0) xenial; urgency=medium
+
+  * major refactoring to improve thread-safety and stability
+  * new feature: stream selection
+  * new feature: subtitle extraction
+  * new feature: built-in updater
 
 prerequisites:
 $ sudo apt-get install devscripts dh-make dput
@@ -20,8 +38,8 @@ $ tar czf convert-x_0.0.2.orig.tar.gz convert-x-0.0.2
 changelog:
 $ cd convert-x-0.0.2
 $ dch
-build deb file:
-$ debuild -S -k3BC494EE
+build signed deb and source.changes:
+$ debuild
 upload:
 $ dput ppa:isiroki/convert-x <source.changes>
 
