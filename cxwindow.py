@@ -32,6 +32,8 @@ def set_window_icon(window, cfg):
             window.tk.call('wm', 'iconphoto', window._w, img)
         except tk.TclError as e:
             eprint(e)
+        except:
+            eprint("ERROR: Cannot load icon file: '{}'!".format(icon_path))
     else:
         eprint("ERROR: Cannot open icon file: '{}'!".format(icon_path))
 
@@ -889,6 +891,9 @@ class Window:
                 logo_image = Image.open(logo_path)
             except tk.TclError as e:
                 eprint(e)
+                return
+            except:
+                eprint("ERROR: Cannot load logo file: '{}'!".format(logo_path))
                 return
         else:
             eprint("ERROR: Cannot open logo file: '{}'!".format(logo_path))
