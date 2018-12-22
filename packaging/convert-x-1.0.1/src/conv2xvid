@@ -1,0 +1,211 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+import sys
+sys.path.append("/lib/convert-x")
+
+import cxcfg as cfg
+from cxmsg import Msg, Type
+import cxproc as cxp
+from cxutils import eprint
+import cxwindow as cx
+import os
+from queue import Queue
+from threading import Lock
+
+###############################################################################
+
+class Application:
+    ### Public Methods ###
+    def __init__(self):
+        self.__cfg = cfg.ConfigManager()
+        self.__window_q = Queue()
+        self.__app_q = Queue()
+        self.__window = cx.Window(window_queue=self.__window_q
+                , app_queue=self.__app_q, cfg=self.__cfg)
+        self.__input_file = None
+        self.__streams = None
+        self.__subtitles = None
+        self.__output_file = None
+        self.__num_of_frames = None
+        self.__one_percent = None
+        self.__video_parser = None
+        self.__converter = None
+        self.__update_searcher = None
+        self.__updater = None
+        self.__subtitle_lock = Lock()
+        
+        self.__run = True
+        while self.__run:
+            self.__step()
+    
+    ### Private Methods ###
+
+    def __step(self):
+        """ Process one message from the queue """
+        msg = self.__app_q.get(block=True)
+        if msg.type == Type.CLOSE:
+            self.__stop(stay_alive=False)
+        elif msg.type == Type.DELETE:
+            self.__remove_file(msg.data[0])
+        elif msg.type == Type.INPUT_FILE:
+            self.__parse_video(msg.data[0])
+        elif msg.type == Type.OUTPUT_FILE:
+            self.__output_file = msg.data[0]
+        elif msg.type == Type.SET_CFG:
+            self.__cfg.set(msg.data[0], msg.data[1])
+        elif msg.type == Type.START:
+            self.__start_conversion(msg.data[0])
+        elif msg.type == Type.STOP:
+            self.__stop(stay_alive=True)
+        elif msg.type == Type.UPDATE_CHECK:
+            self.__update_check(msg.data[0])
+        elif msg.type == Type.UPDATE_START:
+            self.__update_start(msg.data[0])
+        elif msg.type == Type.UPDATE_STOP:
+            self.__update_stop()
+        else:
+            raise RuntimeError("Unexpected message: {}!".format(msg.type))
+    
+    def __parse_video(self, input_file):
+        prev_input_file = self.__input_file
+        self.__input_file = input_file
+        if prev_input_file == self.__input_file and\
+                self.__video_parser is not None and self.__video_parser.finished:
+            self.__video_parsed()
+        else:
+            self.__video_parser = cxp.VideoParserCommand(self.__input_file
+                    , self.__video_parsed)
+            self.__num_of_frames = None
+            self.__one_percent = None
+            self.__video_parser.start()
+    
+    def __video_parsed(self):
+        if self.__video_parser.permission_error:
+            self.__window_q.put(Msg(Type.WARN_PERMISSION_ERROR))
+        elif self.__video_parser.num_of_frames is None:
+            self.__window_q.put(Msg(Type.WARN_UNKNOWN_REMAINING_TIME))
+
+        if not self.__video_parser.permission_error:
+            self.__num_of_frames = self.__video_parser.num_of_frames
+            self.__one_percent = self.__video_parser.one_percent
+            self.__window_q.put(Msg(Type.OPENED, self.__video_parser.streams))
+
+    def __stop(self, stay_alive):
+        if self.__video_parser is not None:
+            self.__video_parser.stop()
+        if self.__converter is not None:
+            self.__converter.stop()
+        if stay_alive:
+            self.__window_q.put(Msg(Type.STOP_ACK))
+        else:
+            self.__window_q.put(Msg(Type.CLOSE_ACK))
+            self.__run = False
+
+    def __start_conversion(self, streams):
+        self.__streams = streams
+        if self.__input_file is None:
+            raise RuntimeError("INTERNAL ERROR: input file should have been already received!")
+        if self.__streams is None:
+            raise RuntimeError("INTERNAL ERROR: streams should have been already received!")
+        if self.__output_file is None:
+            raise RuntimeError("INTERNAL ERROR: output file should have been already received!")
+
+        self.__converter = cxp.ConverterCommand(self.__input_file, self.__streams, self.__output_file
+                , self.__num_of_frames, self.__one_percent
+                , self.__conversion_step, self.__conversion_elapsed, self.__conversion_left, self.__conversion_finished)
+        self.__converter.start()
+
+    def __conversion_step(self, increment):
+        self.__window_q.put(Msg(Type.STEP, increment))
+
+    def __conversion_elapsed(self, elapsed_seconds):
+        self.__window_q.put(Msg(Type.ELAPSED, elapsed_seconds))
+    
+    def __conversion_left(self, left_seconds):
+        self.__window_q.put(Msg(Type.LEFT, left_seconds))
+
+    def __subtitle_extracted(self, subtitle, failed, last_line):
+        with self.__subtitle_lock:
+            for s in self.__subtitles:
+                if s.id == subtitle.id:
+                    s.extracted = True
+                    break
+            subtitle_extraction_finished = True
+            for s in self.__subtitles:
+                if not s.extracted:
+                    subtitle_extraction_finished = False
+                    break
+            if subtitle_extraction_finished:
+                self.__window_q.put(Msg(Type.FINISHED))
+                self.__subtitles = None
+
+    def __extract_subtitles(self):
+        self.__window_q.put(Msg(Type.EXTRACTING_SUBTITLES))
+        output_filename, _ = os.path.splitext(self.__output_file)
+        subtitle_id = 0
+        self.__subtitles = []
+        for stream in self.__streams.streams:
+            if stream.enabled and stream.is_subtitle():
+                str_file = "{}.{}.srt".format(output_filename, stream.lang)
+                # save the subitles next to the output file
+                self.__subtitles.append(cxp.Subtitle(str_id=subtitle_id, str_file=str_file, stream=stream))
+                subtitle_id += 1
+
+        for s in self.__subtitles:
+            cxp.SubtitleExtractorCommand(self.__input_file, s, self.__subtitle_extracted).start()
+
+    def __conversion_finished(self, cancelled, failed, err_msg):
+        if not cancelled:
+            if failed:
+                self.__window_q.put(Msg(Type.FAILED, err_msg))
+            elif self.__streams.has_subtitle():
+                self.__extract_subtitles()
+            else:
+                self.__window_q.put(Msg(Type.FINISHED))
+        if not self.__streams.has_subtitle():
+            self.__streams = None
+
+    def __remove_file(self, file_path):
+        try:
+            os.remove(file_path)
+        except FileNotFoundError as e:
+            eprint(e)
+
+    def __update_stop(self):
+        self.__update_searcher_cancelled = True
+        self.__updater_cancelled = True
+
+    def __update_check(self, password):
+        self.__update_searcher_cancelled = False
+        self.__update_searcher = cxp.UpdateSearch(password, self.__update_checked).start()
+
+    def __update_checked(self, failed, installed_version, candidate_version, last_line):
+        if self.__update_searcher_cancelled:
+            return
+
+        if failed:
+            self.__window_q.put(Msg(Type.UPDATE_FAILED, last_line))
+        else:
+            if installed_version == candidate_version:
+                self.__window_q.put(Msg(Type.UPDATE_LATEST, installed_version))
+            else:
+                self.__window_q.put(Msg(Type.UPDATE_AVAIL, installed_version, candidate_version))
+
+    def __update_start(self, password):
+        self.__updater_cancelled = False
+        self.__updater = cxp.UpdateInstall(password, self.__update_installed).start()
+
+    def __update_installed(self, failed, installed_version, last_line):
+        if self.__updater_cancelled:
+            return
+
+        if failed:
+            self.__window_q.put(Msg(Type.UPDATE_FAILED, last_line))
+        else:
+            self.__window_q.put(Msg(Type.UPDATE_FINISHED, installed_version))
+
+###############################################################################
+###############################################################################
+
+if __name__ == "__main__":
+    Application()

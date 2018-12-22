@@ -1,0 +1,19 @@
+#!/bin/bash -e
+
+pip3 install --upgrade simple-crypt pexpect 2>/dev/null
+
+. /lib/convert-x/environment
+
+if [ ! -f $icon_file ]; then
+    cat <<EOF >> $icon_file
+[Desktop Entry]
+Name=Conv2XviD
+Exec=/usr/bin/conv2xvid
+Icon=/etc/convert-x/XviD.ico
+Terminal=false
+Type=Application
+EOF
+    chown $SUDO_USER $icon_file
+fi
+
+#DEBHELPER#

@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+[[ -n "$DISPLAY" ]]
+
+. $HOME/.config/user-dirs.dirs
+[[ -n "$XDG_DESKTOP_DIR" ]]
+
+export icon_file="$XDG_DESKTOP_DIR/Conv2XviD.desktop"
