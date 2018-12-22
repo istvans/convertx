@@ -18,7 +18,7 @@ $ sudo add-apt-repository ppa:isiroki/convert-x && sudo apt-get update && sudo a
 
 ## Applications
 
-### Conv2XviD 1.0.0
+### Conv2XviD 1.0.1 (bionic)
 
 Simple GUI wrapper around `ffmpeg` to convert videos from any supported format to XviD.
 
